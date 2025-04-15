@@ -6,163 +6,189 @@ public class PlayerController : MonoBehaviour
 {
     // 이동
     private Rigidbody rb;
-    public float dashForce = 10f;
+    public float dashForce = 20f;
     private bool isDashing = false;
 
     // 점프
-    public float jumpForce = 10f;
+    public LayerMask dashBlockLayer;
     public LayerMask groundLayer;
     public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
 
-    // 2단 점프 / maxJumpCount = 3 일 경우 3단 점프 
-    private int jumpCount = 0;
+    public float jumpForce = 8f;
+    public float groundCheckRadius = 0.1f;
+
+    // 점프 조건 강화
+    private float groundedTimer;
+
+    // 점프 관련
+    [SerializeField]
+    private int jumpCount;
     public int maxJumpCount = 2;
+
+    private bool hasAirDashed = false;
+    private float lastJumpTime = -1f;
+
+    // 대시 강화
+    private bool isBoostDash = false;
+    private bool isRotating = false;
     
-    private int dashCount = 0; // 현재 가능한 돌진 횟수
+    private bool wasGrounded = false;
     
-    private bool isFloating = false;  // 공중 정지 상태 여부
-    public float floatDuration = 0.05f;  // 공중에 머무는 시간
+    private bool isGroundBoostReady = false; // 딱 한 번만 사용되도록 따로 분리
     
-    void Start() {
-        // 리지드바디 초기화
+    void Start()
+    {
         rb = GetComponent<Rigidbody>();
-        if (rb == null) 
+
+        if (rb == null)
         {
             Debug.LogError("Rigidbody 컴포넌트가 없습니다!");
         }
+
+        if (groundCheck != null)
+        {
+            groundCheck.localPosition = new Vector3(0, -0.9f, 0);
+        }
+        else
+        {
+            Debug.LogError("groundCheck 오브젝트가 연결되어 있지 않습니다!");
+        }
     }
-
-    void Update() 
+    
+    void Update()
     {
-        // 바닥 체크 → 점프 카운트 초기화
-        if (IsGrounded()) 
+        bool isCurrentlyGrounded = IsGrounded();
+
+        if (isCurrentlyGrounded && !wasGrounded)
         {
+            Debug.Log(">> 착지! 점프 카운트 리셋");
             jumpCount = 0;
-            dashCount = 0; // 점프와 함께 돌진도 초기화
+            hasAirDashed = false;
         }
+
+        wasGrounded = isCurrentlyGrounded;
         
-        if (!IsGrounded() && rb.velocity.y < -0.1f && dashCount < jumpCount) 
-        {
-            dashCount = jumpCount;
-        }
         
-
-        // 점프 입력
-        if (jumpCount < maxJumpCount && Input.GetKeyDown(KeyCode.Space)) 
+        // 점프
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+            if (jumpCount < maxJumpCount)
+            {
+                rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
 
-            float actualJumpForce = (jumpCount == 0) ? jumpForce : jumpForce * 0.5f;
-            rb.AddForce(Vector3.up * actualJumpForce, ForceMode.Impulse);
+                if (jumpCount == 0)
+                {
+                    rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+                    Debug.Log("1단 점프 확인");
+                    isBoostDash = false; // 1단 점프는 기본 상태
+                }
+                else if (jumpCount == 1)
+                {
+                    rb.AddForce(Vector3.up * (jumpForce * 0.8f), ForceMode.Impulse);
+                    Debug.Log("2단 점프 확인");
 
-            jumpCount++;
-            dashCount++;  // 점프마다 돌진 기회 1회 부여
+                    isBoostDash = true; // 2단 점프 시 강화 대시
+                }
+
+                jumpCount++;
+                lastJumpTime = Time.time;
+            }
         }
 
-        // 방향키 돌진
-        if (!isDashing) 
+        // 대시 입력
+        if (!isDashing)
         {
             Vector3 inputDir = Vector3.zero;
 
-            if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow)) 
-            {
-                inputDir = Vector3.forward;
-            }
-            else if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow)) 
-            {
-                inputDir = Vector3.back;
-            }
-            else if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow)) 
-            {
-                inputDir = Vector3.left;
-            }
-            else if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow)) 
-            {
-                inputDir = Vector3.right;
-            }
+            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) inputDir += transform.forward;
+            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) inputDir -= transform.forward;
+            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) inputDir -= transform.right;
+            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) inputDir += transform.right;
 
-            // 공중이면 1회만, 지상이면 무제한
-            if (inputDir != Vector3.zero && (IsGrounded() || dashCount > 0)) 
+            inputDir.y = 0f;
+            inputDir.Normalize();
+
+            if (inputDir != Vector3.zero && (IsGrounded() || !hasAirDashed) && !isRotating)
             {
-                StartCoroutine(Dash(inputDir));
-                if (!IsGrounded()) 
+                float currentDashForce = dashForce;
+
+                // 지상에서의 강화 대시 적용 후 무효화
+                if (isGroundBoostReady && IsGrounded())
                 {
-                    dashCount--;  // 공중에서는 사용 시 차감
+                    currentDashForce *= 2f;
+                    isGroundBoostReady = false;
+                    Debug.Log("F키 지상 강화 대시 사용!");
+                }
+                // 2단 점프 이후 공중 대시도 강화 적용
+                else if (isBoostDash && !IsGrounded())
+                {
+                    currentDashForce *= 2f;
+                    isBoostDash = false;
+                    Debug.Log("2단 점프 강화 공중 대시 사용!");
+                }
+
+                StartCoroutine(DashVelocity(inputDir, currentDashForce));
+
+                if (!IsGrounded())
+                {
+                    hasAirDashed = true;
                 }
             }
         }
         
-        // 공중에서만 감지하고, isFloating이 false일 때만 실행
-        if (!IsGrounded() && !isFloating && Mathf.Abs(rb.velocity.y) < 0.1f) 
+        // F키 대시 강화 (지상에서만 허용)
+        if (Input.GetKeyDown(KeyCode.F) && !isRotating && IsGrounded())
         {
-            StartCoroutine(FloatInAir());
+            StartCoroutine(RotatePlayer(0.3f));
+            isGroundBoostReady = true; // 플래그를 true로 설정 (대시 시 사용됨)
         }
-        
     }
 
-    // 바닥 체크 여부
     private bool IsGrounded()
     {
-        return Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayer);
+        float rayLength = 0.2f;
+        return Physics.Raycast(groundCheck.position, Vector3.down, rayLength, groundLayer);
     }
 
-    // 대쉬 함수
-    IEnumerator Dash(Vector3 direction) 
+    IEnumerator DashVelocity(Vector3 direction, float speed)
     {
         isDashing = true;
 
-        // 돌진 거리
-        float dashDistance = 10f;
+        float duration = 0.2f;
+        float timer = 0f;
 
-        // 현재 위치 + 일정 방향으로 이동
-        Vector3 targetPos = transform.position + direction.normalized * dashDistance;
+        Vector3 dashVelocity = direction * speed;
+        dashVelocity.y = rb.velocity.y; // y속도 유지 (점프와 충돌 방지)
 
-        rb.velocity = new Vector3(0f, rb.velocity.y, 0f);  // 기존 이동 제거, Y속도는 유지
+        while (timer < duration)
+        {
+            rb.velocity = dashVelocity;
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        rb.velocity = new Vector3(0f, rb.velocity.y, 0f); // 대시 후 멈춤
+
+        isDashing = false;
+    }
+
+    IEnumerator RotatePlayer(float duration)
+    {
+        isRotating = true;
 
         float elapsed = 0f;
-        float dashTime = 0.3f;
+        float startRotation = transform.eulerAngles.y;
+        float endRotation = startRotation + 360f;
 
-        while (elapsed < dashTime) 
+        while (elapsed < duration)
         {
-            rb.MovePosition(Vector3.Lerp(transform.position, targetPos, elapsed / dashTime));
+            float yRotation = Mathf.Lerp(startRotation, endRotation, elapsed / duration);
+            transform.eulerAngles = new Vector3(0f, yRotation, 0f);
             elapsed += Time.deltaTime;
             yield return null;
         }
 
-        rb.MovePosition(targetPos);  // 마지막 위치 보정
-
-        isDashing = false;
+        transform.eulerAngles = new Vector3(0f, endRotation, 0f);
+        isRotating = false;
     }
-    
-    IEnumerator FloatInAir() 
-    {
-        isFloating = true;
-
-        // 중력 제거
-        rb.useGravity = false;
-        rb.velocity = Vector3.zero;  // 상승/하강 멈추기
-
-        yield return new WaitForSeconds(floatDuration);
-
-        // 다시 중력 활성화
-        rb.useGravity = true;
-
-        isFloating = false;
-        
-        if (!IsGrounded() && !isFloating && Mathf.Abs(rb.velocity.y) < 0.1f) 
-        {
-            StartCoroutine(FloatInAir());
-        }
-
-        // 하강 중 대쉬 보정
-        if (!IsGrounded() && rb.velocity.y < -0.1f && dashCount < jumpCount) 
-        {
-            dashCount = jumpCount;
-        }
-    }
-    
 }
-
-
-// 2번째 점프에서는 공중에 머무르는 거 없이 바로 낙하 지피티한테 물어보기
