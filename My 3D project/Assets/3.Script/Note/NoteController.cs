@@ -1,19 +1,16 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class NoteController : MonoBehaviour
 {
     TimingManager timingManager;
-    
+
     private void Start()
     {
         timingManager = FindObjectOfType<TimingManager>();
         if (timingManager == null)
-            Debug.LogError("TimingManager를 찾을 수 없습니다!");
+            Debug.LogError("TimingManager가 존재하지 않습니다!");
     }
-    
+
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Space)
@@ -21,7 +18,9 @@ public class NoteController : MonoBehaviour
             || Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.D)
             || Input.GetKeyDown(KeyCode.F))
         {
-                timingManager.CheckTiming();
+            Debug.Log("입력 감지됨");
+            timingManager.CheckTiming(NoteDirection.Left);
+            timingManager.CheckTiming(NoteDirection.Right);
         }
     }
 }

@@ -1,52 +1,73 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Mathematics;
-using Unity.VisualScripting;
 using UnityEngine;
+using Unity.Mathematics;
 
-public class NoteManger : MonoBehaviour
+public class NoteManager : MonoBehaviour
 {
-    public int bpm = 0;
-    double currentTime = 0d;
-    
-    // 노트 생성 기준
-    [SerializeField] private Transform NotcAppcar = null;
-    // 노트 생성
-    [SerializeField] private GameObject Note = null;
-    // 타이밍 매니저 참조
-    TimingManager timingManager;
+    [Header("노트 프리팹")]
+    [SerializeField] private GameObject notePrefabLeft;
+    [SerializeField] private GameObject notePrefabRight;
 
-    private void Start()
-    {
-        timingManager = GetComponent<TimingManager>();
-    }
+    [Header("노트 스폰 위치")]
+    [SerializeField] private Transform spawnPointLeft;
+    [SerializeField] private Transform spawnPointRight;
 
-    // Update is called once per frame
-    void Update()
+    [Header("노트 삭제 기준점 (중앙)")]
+    [SerializeField] private Transform centerLeft;
+    [SerializeField] private Transform centerRight;
+
+    [Header("오브젝트 풀")]
+    [SerializeField] private ObjectPool notePoolLeft;
+    [SerializeField] private ObjectPool notePoolRight;
+
+    [Header("타이밍 매니저")]
+    [SerializeField] private TimingManager timingManager;
+
+    [Header("생성 속도")]
+    [SerializeField] private int bpm = 120;
+    private double currentTime = 0d;
+
+    private void Update()
     {
         currentTime += Time.deltaTime;
- 
-        if (currentTime >= 60d / bpm)
+
+        if (bpm > 0 && currentTime >= 60d / bpm)
         {
-            GameObject tNoteLeft = 
-                Instantiate(Note, NotcAppcar.position, quaternion.identity);
-            
-            tNoteLeft.transform.SetParent(this.transform);
-            timingManager.boxNoteList.Add(tNoteLeft);
-            
+            SpawnNote(NoteDirection.Left);
+            SpawnNote(NoteDirection.Right);
             currentTime -= 60d / bpm;
         }
-        
-
     }
 
-    private void OnTriggerExit2D(Collider2D other)
+    private void SpawnNote(NoteDirection dir)
     {
-        if (other.CompareTag("Note"))
+        // 풀, 프리팹, 스폰 위치 선택
+        ObjectPool pool = dir == NoteDirection.Left ? notePoolLeft : notePoolRight;
+        Transform spawnPos = dir == NoteDirection.Left ? spawnPointLeft : spawnPointRight;
+        GameObject prefab = dir == NoteDirection.Left ? notePrefabLeft : notePrefabRight;
+
+        // 풀에서 꺼내기
+        GameObject note = pool.Get();
+        note.transform.localPosition = spawnPos.localPosition;
+        note.transform.SetParent(this.transform, false);
+
+        // NoteBase 초기화
+        NoteBase noteBase = note.GetComponent<NoteBase>();
+        if (noteBase != null)
         {
-            timingManager.boxNoteList.Remove(other.gameObject);
-            Destroy(other.gameObject);
+            noteBase.direction = dir;
+            noteBase.Init(pool, centerLeft, centerRight); // 💡 핵심 부분!
         }
+        else
+        {
+            Debug.LogWarning("NoteBase 스크립트가 노트에 없습니다!");
+        }
+
+        // TimingManager에 리스트 추가
+        if (dir == NoteDirection.Left)
+            timingManager.leftNoteList.Add(note);
+        else
+            timingManager.rightNoteList.Add(note);
     }
 }

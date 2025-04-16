@@ -1,54 +1,66 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class TimingManager : MonoBehaviour
 {
-    
-    public List<GameObject> boxNoteList = new List<GameObject>();
-    
-    [SerializeField] private Transform Center;
-    [SerializeField] private RectTransform[] timingRect;
-    Vector2[] timingBoxs;
+    public List<GameObject> leftNoteList = new List<GameObject>();
+    public List<GameObject> rightNoteList = new List<GameObject>();
+
+    [SerializeField] private Transform CenterLeft;
+    [SerializeField] private Transform CenterRight;
+
+    [SerializeField] private RectTransform[] timingRectLeft;  // 인덱스: 0 = Bad, 1 = Good, 2 = Perfect
+    [SerializeField] private RectTransform[] timingRectRight; // 인덱스 동일
+    private Vector2[] timingBoxs;
+
+    private Vector2[] timingBoxsLeft;
+    private Vector2[] timingBoxsRight;
+
     
     void Start()
     {
-        // 타이밍 박스 설정
-        timingBoxs = new Vector2[timingRect.Length];
+        timingBoxsLeft = new Vector2[timingRectLeft.Length];
+        timingBoxsRight = new Vector2[timingRectRight.Length];
 
-        for (int i = 0; i < timingRect.Length; i++)
+        for (int i = 0; i < timingRectLeft.Length; i++)
         {
-            timingBoxs[i].Set(Center.localPosition.x - timingRect[i].rect.width / 2,
-                              Center.localPosition.x + timingRect[i].rect.width / 2);
+            timingBoxsLeft[i].Set(
+                CenterLeft.localPosition.x - timingRectLeft[i].rect.width / 2,
+                CenterLeft.localPosition.x + timingRectLeft[i].rect.width / 2
+            );
+        }
+
+        for (int i = 0; i < timingRectRight.Length; i++)
+        {
+            timingBoxsRight[i].Set(
+                CenterRight.localPosition.x - timingRectRight[i].rect.width / 2,
+                CenterRight.localPosition.x + timingRectRight[i].rect.width / 2
+            );
         }
     }
 
-    public void CheckTiming()
+    public void CheckTiming(NoteDirection direction)
     {
-        bool isHit = false;
-    
-        for (int i = boxNoteList.Count - 1; i >= 0; i--)
+        List<GameObject> noteList = direction == NoteDirection.Left ? leftNoteList : rightNoteList;
+        Vector2[] timingBoxs = direction == NoteDirection.Left ? timingBoxsLeft : timingBoxsRight;
+
+        for (int i = noteList.Count - 1; i >= 0; i--)
         {
-            GameObject note = boxNoteList[i];
+            GameObject note = noteList[i];
             if (note == null) continue;
-    
+
             float tNotePosX = note.transform.localPosition.x;
-    
+
             for (int j = 0; j < timingBoxs.Length; j++)
             {
                 if (timingBoxs[j].x <= tNotePosX && tNotePosX <= timingBoxs[j].y)
                 {
                     Destroy(note);
-                    boxNoteList.RemoveAt(i);
-                    Debug.Log("Hit: " + j);
-                    isHit = true;
-                    break; // 이 노트는 판정 끝났으니 다음 노트로
+                    noteList.RemoveAt(i);
+                    Debug.Log($"[{direction}] 판정 성공! 영역: {j}");
+                    break;
                 }
             }
         }
-    
-        if (!isHit)
-            Debug.Log("Miss");
     }
-    
 }
