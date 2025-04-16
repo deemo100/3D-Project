@@ -14,7 +14,7 @@ public class CenterFlame : MonoBehaviour
             myaudio = GetComponent<AudioSource>();
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter2D(Collider2D other)
     {
         if (!musicStart)
         {
