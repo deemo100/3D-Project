@@ -10,6 +10,7 @@ public class NoteBase : MonoBehaviour
     private Transform centerLeft;
     private Transform centerRight;
     private TimingManager timingManager;
+    private EffectManager effectManager; // ✅ 이펙트 매니저 참조
 
     public void Init(ObjectPool pool, Transform centerL, Transform centerR, NoteDirection dir, TimingManager timing)
     {
@@ -19,6 +20,10 @@ public class NoteBase : MonoBehaviour
         direction = dir;
         timingManager = timing;
         judged = false;
+
+        // ✅ 최초 1회만 EffectManager 연결
+        if (effectManager == null)
+            effectManager = GameObject.FindObjectOfType<EffectManager>();
     }
 
     void Update()
@@ -32,8 +37,16 @@ public class NoteBase : MonoBehaviour
         if (other.CompareTag("MissZone") && !judged)
         {
             judged = true;
+
+            // ✅ Miss 판정 이펙트 출력
+            if (effectManager != null)
+            {
+                effectManager.NoteHitEffect();          // 공통 이펙트
+                effectManager.JudgementHitEffect(3);    // 3번 인덱스 = Miss
+            }
+
             ReturnToPool();
-            //Debug.Log("💥 트리거 감지로 노트 반환됨");
+            Debug.Log("💥 MissZone 트리거 → Miss 판정 이펙트 출력됨");
         }
     }
 
