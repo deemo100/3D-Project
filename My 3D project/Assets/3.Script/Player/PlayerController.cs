@@ -61,7 +61,7 @@ public class PlayerController : MonoBehaviour
 
         if (isCurrentlyGrounded && !wasGrounded)
         {
-            Debug.Log(">> 착지! 점프 카운트 리셋");
+            // Debug.Log(">> 착지! 점프 카운트 리셋");
             jumpCount = 0;
             hasAirDashed = false;
         }

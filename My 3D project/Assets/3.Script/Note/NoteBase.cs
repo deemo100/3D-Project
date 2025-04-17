@@ -9,52 +9,46 @@ public class NoteBase : MonoBehaviour
     private ObjectPool notePool;
     private Transform centerLeft;
     private Transform centerRight;
+    private TimingManager timingManager;
 
-    private float removeDistance = 100f; // 벗어난 거리 허용값
-
-    public void Init(ObjectPool pool, Transform centerL, Transform centerR)
+    public void Init(ObjectPool pool, Transform centerL, Transform centerR, NoteDirection dir, TimingManager timing)
     {
         notePool = pool;
         centerLeft = centerL;
         centerRight = centerR;
+        direction = dir;
+        timingManager = timing;
         judged = false;
     }
 
     void Update()
     {
-        // 노트 이동
         Vector3 moveDir = direction == NoteDirection.Left ? Vector3.right : Vector3.left;
         transform.localPosition += moveDir * noteSpeed * Time.deltaTime;
+    }
 
-        float currentX = transform.localPosition.x;
-
-        if (!judged)
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("MissZone") && !judged)
         {
-            if (direction == NoteDirection.Left)
-            {
-                float centerX = centerLeft.localPosition.x;
-                if (currentX > centerX + removeDistance)
-                {
-                    Debug.Log("[NoteBase] LEFT 노트 기준점 벗어남 → 반환");
-                    judged = true;
-                    ReturnToPool();
-                }
-            }
-            else if (direction == NoteDirection.Right)
-            {
-                float centerX = centerRight.localPosition.x;
-                if (currentX < centerX - removeDistance)
-                {
-                    Debug.Log("[NoteBase] RIGHT 노트 기준점 벗어남 → 반환");
-                    judged = true;
-                    ReturnToPool();
-                }
-            }
+            judged = true;
+            ReturnToPool();
+            //Debug.Log("💥 트리거 감지로 노트 반환됨");
         }
     }
 
     private void ReturnToPool()
     {
+        if (timingManager != null)
+        {
+            var noteList = direction == NoteDirection.Left
+                ? timingManager.leftNoteList
+                : timingManager.rightNoteList;
+
+            if (noteList.Contains(gameObject))
+                noteList.Remove(gameObject);
+        }
+
         if (notePool != null)
             notePool.Return(gameObject);
         else

@@ -18,7 +18,7 @@ public class NoteController : MonoBehaviour
             || Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.D)
             || Input.GetKeyDown(KeyCode.F))
         {
-            Debug.Log("입력 감지됨");
+            // Debug.Log("입력 감지됨");
             timingManager.CheckTiming(NoteDirection.Left);
             timingManager.CheckTiming(NoteDirection.Right);
         }

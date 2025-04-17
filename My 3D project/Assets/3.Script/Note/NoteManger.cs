@@ -13,7 +13,7 @@ public class NoteManager : MonoBehaviour
     [SerializeField] private Transform spawnPointLeft;
     [SerializeField] private Transform spawnPointRight;
 
-    [Header("노트 삭제 기준점 (중앙)")]
+    [Header("노트 삭제 기준점")]
     [SerializeField] private Transform centerLeft;
     [SerializeField] private Transform centerRight;
 
@@ -49,6 +49,11 @@ public class NoteManager : MonoBehaviour
 
         // 풀에서 꺼내기
         GameObject note = pool.Get();
+        if (note == null)
+        {
+            Debug.LogWarning("노트 풀에서 꺼낼 수 없습니다! 풀 부족?");
+            return;
+        }
         note.transform.localPosition = spawnPos.localPosition;
         note.transform.SetParent(this.transform, false);
 
@@ -57,7 +62,7 @@ public class NoteManager : MonoBehaviour
         if (noteBase != null)
         {
             noteBase.direction = dir;
-            noteBase.Init(pool, centerLeft, centerRight); // 💡 핵심 부분!
+            noteBase.Init(pool, centerLeft, centerRight, dir, timingManager); // ✅ 수정됨
         }
         else
         {

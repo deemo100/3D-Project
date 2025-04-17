@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 2
   tags:
   - Note
+  - MissZone
   layers:
   - Default
   - TransparentFX

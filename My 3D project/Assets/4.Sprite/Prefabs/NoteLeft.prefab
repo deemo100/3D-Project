@@ -150,6 +150,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   direction: 0
+  noteSpeed: 400
+  judged: 0
 --- !u!50 &4878683511052917968
 Rigidbody2D:
   serializedVersion: 4
