@@ -1,12 +1,7 @@
 using UnityEngine;
 
-/// <summary>
-/// 노트 개별 이동 및 MissZone 충돌 처리 담당.
-/// 초기화 시 방향, 타이밍 매니저, 이펙트 매니저 연결.
-/// </summary>
 public class NoteBase : MonoBehaviour
 {
-    // ========== 노트 기본 설정 ==========
     [Header("노트 속도 설정")]
     public float noteSpeed = 400f;
 
@@ -18,34 +13,31 @@ public class NoteBase : MonoBehaviour
 
     // ========== 내부 참조 ==========
     private ObjectPool notePool;
-    private Transform centerLeft;
-    private Transform centerRight;
     private TimingManager timingManager;
     private EffectManager effectManager;
+    private ComboManager comboManager; // ✅ 콤보 매니저 추가
 
-    private Vector3 moveDir; // 이동 방향 캐싱
+    private Vector3 moveDir;
 
     // ========== 초기화 ==========
     public void Init(ObjectPool pool, Transform centerL, Transform centerR, NoteDirection dir, TimingManager timing)
     {
         notePool = pool;
-        centerLeft = centerL;
-        centerRight = centerR;
         direction = dir;
         timingManager = timing;
         judged = false;
 
         moveDir = (direction == NoteDirection.Left) ? Vector3.right : Vector3.left;
+
         effectManager ??= FindObjectOfType<EffectManager>();
+        comboManager ??= FindObjectOfType<ComboManager>(); // ✅ 콤보 매니저 연결
     }
 
-    // ========== 이동 처리 ==========
     private void Update()
     {
         transform.localPosition += moveDir * noteSpeed * Time.deltaTime;
     }
 
-    // ========== 미스 판정 처리 ==========
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("MissZone") && !judged)
@@ -55,15 +47,16 @@ public class NoteBase : MonoBehaviour
         }
     }
 
+    // ✅ Miss 처리 (이펙트 + 콤보 초기화)
     private void HandleMiss()
     {
-        effectManager?.JudgementHitEffect(3); // 3번 인덱스 = Miss
-
+        effectManager?.JudgementHitEffect(3);   // 3번 인덱스 = Miss
+        comboManager?.ResetCombo();             // ✅ 콤보 리셋
         ReturnToPool();
-        Debug.Log(" MissZone 트리거 → Miss 판정 이펙트 출력됨");
+
+        Debug.Log("❌ MissZone 트리거 → Miss 판정 + 콤보 초기화");
     }
 
-    // ========== 반환 및 리스트 제거 ==========
     private void ReturnToPool()
     {
         RemoveFromTimingList();

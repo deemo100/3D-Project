@@ -37,9 +37,11 @@ public class TimingManager : MonoBehaviour
     [SerializeField] private float spawnInterval = 1.0f;
     private float timer = 0f;
 
-    // ========== 이펙트 매니저 ==========
+    // ========== 참조 매니저 ==========
     private EffectManager effectManager;
-
+    private ScoreManager scoreManager;
+    private ComboManager comboManager;
+    
     // ========== 판정 이름 ==========
     private readonly string[] judgementNames = { "Perfect", "Good", "Bad", "Miss" };
 
@@ -48,6 +50,8 @@ public class TimingManager : MonoBehaviour
     {
         InitTimingBoxes();
         effectManager = FindObjectOfType<EffectManager>();
+        scoreManager = FindObjectOfType<ScoreManager>();
+        comboManager = FindObjectOfType<ComboManager>();
     }
 
     void Update()
@@ -125,23 +129,42 @@ public class TimingManager : MonoBehaviour
 
             int result = Mathf.Max(leftJudgement, rightJudgement);
 
-            // ✅ 조건부 이펙트 분리
-            if (result <= 1) // Perfect or Good
+            // ✅ Perfect 또는 Good에만 NoteHitEffect 출력
+            if (result <= 1)
                 effectManager?.NoteHitEffect();
 
-            effectManager?.JudgementHitEffect(result); // 항상 실행됨
+            // ✅ 모든 판정에 JudgementEffect 출력
+            effectManager?.JudgementHitEffect(result);
+
+            // ✅ 판정 기록
+            scoreManager?.AddJudgement(result);
+
+            // ✅ 콤보 처리
+            if (result >= 2) // Bad or worse
+                comboManager?.ResetCombo();
+            else
+                comboManager?.IncrementCombo();
 
             return result;
         }
 
         // ❌ Miss 처리
-        if (leftNote != null) { notePoolLeft.Return(leftNote); leftNoteList.Remove(leftNote); }
-        if (rightNote != null) { notePoolRight.Return(rightNote); rightNoteList.Remove(rightNote); }
+        if (leftNote != null)
+        {
+            notePoolLeft.Return(leftNote);
+            leftNoteList.Remove(leftNote);
+        }
+        if (rightNote != null)
+        {
+            notePoolRight.Return(rightNote);
+            rightNoteList.Remove(rightNote);
+        }
 
-        // ✅ Miss는 Judgement만
         effectManager?.JudgementHitEffect(3); // Miss
+        scoreManager?.AddJudgement(3);
+        comboManager?.ResetCombo();
 
-        return 3;
+        return 3; // Miss
     }
 
     // ==================== 유틸 ====================
