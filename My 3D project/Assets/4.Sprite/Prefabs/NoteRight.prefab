@@ -11,10 +11,10 @@ GameObject:
   - component: {fileID: 9086631140617123737}
   - component: {fileID: 5495091987831823344}
   - component: {fileID: 6479873862301599465}
-  - component: {fileID: 6158017719073055103}
   - component: {fileID: 8553866135219163567}
   - component: {fileID: 4878683511052917968}
-  - component: {fileID: -6655984298680796842}
+  - component: {fileID: -7752745833919759006}
+  - component: {fileID: 6158017719073055103}
   m_Layer: 5
   m_Name: NoteRight
   m_TagString: Note
@@ -79,19 +79,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &6158017719073055103
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1862527463585884348}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 528b49be8debb2341b025c7f51ac7049, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  direction: 1
 --- !u!61 &8553866135219163567
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -164,7 +151,7 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!114 &-6655984298680796842
+--- !u!114 &-7752745833919759006
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -173,7 +160,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 1862527463585884348}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: abcc3b35040125841b3e888af6dd8694, type: 3}
+  m_Script: {fileID: 11500000, guid: 5c8fe045e132df144b1058972c029465, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  notespeed: 400
+  noteSpeed: 400
+  direction: 1
+--- !u!114 &6158017719073055103
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1862527463585884348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 528b49be8debb2341b025c7f51ac7049, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  direction: 1
+  noteSpeed: 400
+  judged: 0

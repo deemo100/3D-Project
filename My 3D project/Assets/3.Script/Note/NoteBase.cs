@@ -1,17 +1,31 @@
 using UnityEngine;
 
+/// <summary>
+/// 노트 개별 이동 및 MissZone 충돌 처리 담당.
+/// 초기화 시 방향, 타이밍 매니저, 이펙트 매니저 연결.
+/// </summary>
 public class NoteBase : MonoBehaviour
 {
-    public NoteDirection direction;
+    // ========== 노트 기본 설정 ==========
+    [Header("노트 속도 설정")]
     public float noteSpeed = 400f;
+
+    [Header("노트 방향")]
+    public NoteDirection direction;
+
+    [Header("판정 여부")]
     public bool judged = false;
 
+    // ========== 내부 참조 ==========
     private ObjectPool notePool;
     private Transform centerLeft;
     private Transform centerRight;
     private TimingManager timingManager;
-    private EffectManager effectManager; // ✅ 이펙트 매니저 참조
+    private EffectManager effectManager;
 
+    private Vector3 moveDir; // 이동 방향 캐싱
+
+    // ========== 초기화 ==========
     public void Init(ObjectPool pool, Transform centerL, Transform centerR, NoteDirection dir, TimingManager timing)
     {
         notePool = pool;
@@ -21,50 +35,54 @@ public class NoteBase : MonoBehaviour
         timingManager = timing;
         judged = false;
 
-        // ✅ 최초 1회만 EffectManager 연결
-        if (effectManager == null)
-            effectManager = GameObject.FindObjectOfType<EffectManager>();
+        moveDir = (direction == NoteDirection.Left) ? Vector3.right : Vector3.left;
+        effectManager ??= FindObjectOfType<EffectManager>();
     }
 
-    void Update()
+    // ========== 이동 처리 ==========
+    private void Update()
     {
-        Vector3 moveDir = direction == NoteDirection.Left ? Vector3.right : Vector3.left;
         transform.localPosition += moveDir * noteSpeed * Time.deltaTime;
     }
 
+    // ========== 미스 판정 처리 ==========
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("MissZone") && !judged)
         {
             judged = true;
-
-            // ✅ Miss 판정 이펙트 출력
-            if (effectManager != null)
-            {
-                effectManager.NoteHitEffect();          // 공통 이펙트
-                effectManager.JudgementHitEffect(3);    // 3번 인덱스 = Miss
-            }
-
-            ReturnToPool();
-            Debug.Log("💥 MissZone 트리거 → Miss 판정 이펙트 출력됨");
+            HandleMiss();
         }
     }
 
+    private void HandleMiss()
+    {
+        effectManager?.NoteHitEffect();
+        effectManager?.JudgementHitEffect(3); // 3번 인덱스 = Miss
+
+        ReturnToPool();
+        Debug.Log(" MissZone 트리거 → Miss 판정 이펙트 출력됨");
+    }
+
+    // ========== 반환 및 리스트 제거 ==========
     private void ReturnToPool()
     {
-        if (timingManager != null)
-        {
-            var noteList = direction == NoteDirection.Left
-                ? timingManager.leftNoteList
-                : timingManager.rightNoteList;
-
-            if (noteList.Contains(gameObject))
-                noteList.Remove(gameObject);
-        }
+        RemoveFromTimingList();
 
         if (notePool != null)
             notePool.Return(gameObject);
         else
             Destroy(gameObject);
+    }
+
+    private void RemoveFromTimingList()
+    {
+        if (timingManager == null) return;
+
+        var list = direction == NoteDirection.Left
+            ? timingManager.leftNoteList
+            : timingManager.rightNoteList;
+
+        list.Remove(gameObject);
     }
 }

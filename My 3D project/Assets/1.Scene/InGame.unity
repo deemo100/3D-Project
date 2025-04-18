@@ -204,8 +204,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 735edc3ee79d97f448552fa86c7ad865, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  noteHitAnimator: {fileID: 650967269}
-  judgementAnimator: {fileID: 135795447}
+  noteHitEffectAnimator: {fileID: 650967269}
+  judgementEffectAnimator: {fileID: 135795447}
   judgementImage: {fileID: 135795448}
   judgementSprites:
   - {fileID: -66310563, guid: e4ee73b7e9dc7c741ad847b05ec82930, type: 3}
@@ -590,9 +590,9 @@ GameObject:
   - component: {fileID: 242281888}
   - component: {fileID: 242281893}
   - component: {fileID: 242281892}
-  - component: {fileID: 242281891}
-  - component: {fileID: 242281890}
   - component: {fileID: 242281889}
+  - component: {fileID: 242281890}
+  - component: {fileID: 242281891}
   m_Layer: 5
   m_Name: CenterFlame(Left)
   m_TagString: MissZone
@@ -772,7 +772,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b10326c94b3780042899b396a53c3781, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicStart: 0
+  hasPlayedAudio: 0
 --- !u!114 &242281892
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1402,7 +1402,6 @@ RectTransform:
   m_Children:
   - {fileID: 999813104}
   - {fileID: 72629734}
-  - {fileID: 1718579792}
   - {fileID: 292817334}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1784,8 +1783,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 999813104}
-  - component: {fileID: 999813107}
   - component: {fileID: 999813106}
+  - component: {fileID: 999813107}
   - component: {fileID: 999813105}
   m_Layer: 0
   m_Name: Note
@@ -1826,14 +1825,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   leftNoteList: []
   rightNoteList: []
-  CenterLeft: {fileID: 242281888}
-  CenterRight: {fileID: 1220115617}
-  timingRectLeft:
+  centerLeft: {fileID: 242281888}
+  centerRight: {fileID: 1220115617}
+  timingRectsLeft:
   - {fileID: 1553483396}
   - {fileID: 1172170603}
   - {fileID: 1866298067}
   - {fileID: 538644664}
-  timingRectRight:
+  timingRectsRight:
   - {fileID: 1678568905}
   - {fileID: 2037126669}
   - {fileID: 703620933}
@@ -1911,7 +1910,7 @@ MonoBehaviour:
   notePoolLeft: {fileID: 1276521609}
   notePoolRight: {fileID: 1651847477}
   timingManager: {fileID: 999813105}
-  bpm: 160
+  bpm: 120
 --- !u!1 &1062557595
 GameObject:
   m_ObjectHideFlags: 0
@@ -2480,6 +2479,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefab: {fileID: 1862527463585884348, guid: 56aeced2b820d89479fbdb12a296f970, type: 3}
   poolSize: 15
+  allowDynamicExpansion: 1
 --- !u!1 &1434742636
 GameObject:
   m_ObjectHideFlags: 0
@@ -2649,10 +2649,10 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1761817009}
-  - {fileID: 703620933}
-  - {fileID: 2037126669}
   - {fileID: 1678568905}
+  - {fileID: 2037126669}
+  - {fileID: 703620933}
+  - {fileID: 1761817009}
   m_Father: {fileID: 676417779}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -2839,6 +2839,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefab: {fileID: 1862527463585884348, guid: e12d7ab84370a0f4a82bca27f363a56f, type: 3}
   poolSize: 15
+  allowDynamicExpansion: 1
 --- !u!1 &1667033817
 GameObject:
   m_ObjectHideFlags: 0
@@ -2969,7 +2970,7 @@ Transform:
   m_GameObject: {fileID: 1667033817}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.15, z: 0}
+  m_LocalPosition: {x: 0, y: 1.15, z: -3.05}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2991,17 +2992,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   dashForce: 20
-  dashBlockLayer:
-    serializedVersion: 2
-    m_Bits: 64
+  jumpForce: 8
+  maxJumpCount: 2
+  jumpCount: 0
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
   groundCheck: {fileID: 697458337}
-  jumpForce: 8
-  groundCheckRadius: 0.1
-  jumpCount: 0
-  maxJumpCount: 2
+  groundCheckRadius: 0.2
 --- !u!1 &1678568904
 GameObject:
   m_ObjectHideFlags: 0
@@ -3077,50 +3075,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1678568904}
   m_CullTransparentMesh: 1
---- !u!1 &1718579791
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1718579792}
-  - component: {fileID: 1718579793}
-  m_Layer: 0
-  m_Name: NoteController
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1718579792
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1718579791}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -400, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 673135110}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1718579793
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1718579791}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 83c8b2af4302e0348adacd1b229647ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1721433350
 GameObject:
   m_ObjectHideFlags: 0
@@ -3643,10 +3597,10 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 538644664}
-  - {fileID: 1866298067}
-  - {fileID: 1172170603}
   - {fileID: 1553483396}
+  - {fileID: 1172170603}
+  - {fileID: 1866298067}
+  - {fileID: 538644664}
   m_Father: {fileID: 825613825}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}

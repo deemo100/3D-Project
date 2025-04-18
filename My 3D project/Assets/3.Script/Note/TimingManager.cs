@@ -1,133 +1,197 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 노트 판정 타이밍, 위치, 오브젝트 풀 관리를 담당하는 매니저
+/// - 판정 영역 계산
+/// - 노트 리스트 클린업
+/// - 노트 판정 체크 (양쪽 동시)
+/// </summary>
 public class TimingManager : MonoBehaviour
 {
-    [HideInInspector]
-    public List<GameObject> leftNoteList = new List<GameObject>();
+    // ========== 노트 리스트 ==========
+    [HideInInspector] public List<GameObject> leftNoteList = new();
+    [HideInInspector] public List<GameObject> rightNoteList = new();
 
-    [HideInInspector]
-    public List<GameObject> rightNoteList = new List<GameObject>();
+    // ========== 판정 기준 위치 ==========
+    [SerializeField] private Transform centerLeft;
+    [SerializeField] private Transform centerRight;
 
-    [SerializeField] private Transform CenterLeft;
-    [SerializeField] private Transform CenterRight;
+    // ========== 판정 영역 UI ==========
+    [SerializeField] private RectTransform[] timingRectsLeft;  // 0:Bad, 1:Good, 2:Perfect
+    [SerializeField] private RectTransform[] timingRectsRight;
 
-    [SerializeField] private RectTransform[] timingRectLeft;   // 인덱스: 0=Bad, 1=Good, 2=Perfect
-    [SerializeField] private RectTransform[] timingRectRight;
+    private Vector2[] timingBoxesLeft;
+    private Vector2[] timingBoxesRight;
 
-    private Vector2[] timingBoxsLeft;
-    private Vector2[] timingBoxsRight;
-
+    // ========== 오브젝트 풀 ==========
     [Header("노트 풀")]
     [SerializeField] private ObjectPool notePoolLeft;
     [SerializeField] private ObjectPool notePoolRight;
 
-    [Header("노트 생성")]
+    // ========== 노트 생성 위치 ==========
+    [Header("노트 생성 위치")]
     [SerializeField] private Transform spawnPointLeft;
     [SerializeField] private Transform spawnPointRight;
-    [SerializeField] private float spawnInterval = 1.0f;
 
+    [SerializeField] private float spawnInterval = 1.0f;
     private float timer = 0f;
 
+    // ========== 이펙트 매니저 ==========
     private EffectManager effectManager;
 
+    // ========== 판정 이름 ==========
+    private readonly string[] judgementNames = { "Perfect", "Good", "Bad", "Miss" };
+
+    // ==================== Unity 이벤트 ====================
     void Start()
     {
-        timingBoxsLeft = new Vector2[timingRectLeft.Length];
-        timingBoxsRight = new Vector2[timingRectRight.Length];
-
-        for (int i = 0; i < timingRectLeft.Length; i++)
-        {
-            timingBoxsLeft[i] = new Vector2(
-                CenterLeft.localPosition.x - timingRectLeft[i].rect.width / 2,
-                CenterLeft.localPosition.x + timingRectLeft[i].rect.width / 2
-            );
-        }
-
-        for (int i = 0; i < timingRectRight.Length; i++)
-        {
-            timingBoxsRight[i] = new Vector2(
-                CenterRight.localPosition.x - timingRectRight[i].rect.width / 2,
-                CenterRight.localPosition.x + timingRectRight[i].rect.width / 2
-            );
-        }
-
+        InitTimingBoxes();
         effectManager = FindObjectOfType<EffectManager>();
     }
 
     void Update()
     {
-        // 비활성화된 노트 리스트에서 제거
         CleanNoteList(leftNoteList);
         CleanNoteList(rightNoteList);
     }
 
-    void CleanNoteList(List<GameObject> noteList)
+    // ==================== 초기화 ====================
+    private void InitTimingBoxes()
     {
-        for (int i = noteList.Count - 1; i >= 0; i--)
+        timingBoxesLeft = new Vector2[timingRectsLeft.Length];
+        timingBoxesRight = new Vector2[timingRectsRight.Length];
+
+        for (int i = 0; i < timingRectsLeft.Length; i++)
         {
-            GameObject note = noteList[i];
-            if (note == null || !note.activeSelf)
-            {
-                noteList.RemoveAt(i);
-            }
+            float half = timingRectsLeft[i].rect.width / 2;
+            timingBoxesLeft[i] = new Vector2(
+                centerLeft.localPosition.x - half,
+                centerLeft.localPosition.x + half
+            );
+        }
+
+        for (int i = 0; i < timingRectsRight.Length; i++)
+        {
+            float half = timingRectsRight[i].rect.width / 2;
+            timingBoxesRight[i] = new Vector2(
+                centerRight.localPosition.x - half,
+                centerRight.localPosition.x + half
+            );
         }
     }
 
+    // ==================== 노트 생성 ====================
     public void SpawnNote(NoteDirection direction)
     {
-        ObjectPool pool = direction == NoteDirection.Left ? notePoolLeft : notePoolRight;
-        Transform spawnPoint = direction == NoteDirection.Left ? spawnPointLeft : spawnPointRight;
-        List<GameObject> noteList = direction == NoteDirection.Left ? leftNoteList : rightNoteList;
+        ObjectPool pool = GetPool(direction);
+        Transform spawnPoint = GetSpawnPoint(direction);
+        List<GameObject> noteList = GetNoteList(direction);
 
         GameObject note = pool.Get();
         if (note == null) return;
 
-        NoteBase noteBase = note.GetComponent<NoteBase>();
-        noteBase.Init(pool, CenterLeft, CenterRight, direction, this);
-
-        note.transform.localPosition = spawnPoint.localPosition;
-        note.transform.localRotation = Quaternion.identity;
-        note.SetActive(true);
-
-        noteList.Add(note);
+        var noteBase = note.GetComponent<NoteBase>();
+        if (noteBase != null)
+        {
+            noteBase.Init(pool, centerLeft, centerRight, direction, this);
+            note.transform.localPosition = spawnPoint.localPosition;
+            note.transform.localRotation = Quaternion.identity;
+            note.SetActive(true);
+            noteList.Add(note);
+        }
     }
 
-    public void CheckTiming(NoteDirection direction)
+    /// <summary>
+    /// 양쪽 노트를 동시에 판정하고 결과 인덱스 반환
+    /// 성공 시: 0=Perfect, 1=Good, 2=Bad
+    /// 실패 시: 3=Miss
+    /// </summary>
+    public int CheckDualTiming()
     {
-        List<GameObject> noteList = direction == NoteDirection.Left ? leftNoteList : rightNoteList;
-        Vector2[] timingBoxs = direction == NoteDirection.Left ? timingBoxsLeft : timingBoxsRight;
-        ObjectPool pool = direction == NoteDirection.Left ? notePoolLeft : notePoolRight;
+        GameObject leftNote = GetFirstActiveNote(leftNoteList);
+        GameObject rightNote = GetFirstActiveNote(rightNoteList);
 
-        for (int i = 0; i < noteList.Count; i++) // ⭐ 역순 ❌ 정순으로 변경
+        int leftJudgement = GetJudgementIndex(leftNote, timingBoxesLeft);
+        int rightJudgement = GetJudgementIndex(rightNote, timingBoxesRight);
+
+        // ✅ 양쪽 판정 모두 성공해야만 유효한 판정
+        if (leftJudgement >= 0 && rightJudgement >= 0)
         {
-            GameObject note = noteList[i];
+            // 노트 반환
+            notePoolLeft.Return(leftNote);
+            notePoolRight.Return(rightNote);
+            leftNoteList.Remove(leftNote);
+            rightNoteList.Remove(rightNote);
 
-            if (note == null || !note.activeSelf)
-            {
-                noteList.RemoveAt(i);
-                i--;
-                continue;
-            }
+            // ✅ 더 나쁜 판정을 기준으로 사용
+            int result = Mathf.Max(leftJudgement, rightJudgement);
 
-            float tNotePosX = note.transform.localPosition.x;
+            // 이펙트 실행
+            effectManager?.NoteHitEffect();
+            effectManager?.JudgementHitEffect(result);
 
-            for (int j = 0; j < timingBoxs.Length; j++)
-            {
-                if (timingBoxs[j].x <= tNotePosX && tNotePosX <= timingBoxs[j].y)
-                {
-                    pool.Return(note);
-                    noteList.RemoveAt(i);
-
-                    effectManager.NoteHitEffect();
-                    effectManager.JudgementHitEffect(j);
-
-                    string[] judgementNames = { "Perfect", "Good", "Bad", "Miss" };
-                    Debug.Log($"🎯 판정: {judgementNames[j]} ({j}) | 위치: {tNotePosX}");
-
-                    return; // ⭐ 하나만 판정하고 종료
-                }
-            }
+            return result; // 판정 인덱스 반환
         }
+
+        // ❌ Miss 판정 처리
+        if (leftNote != null) { notePoolLeft.Return(leftNote); leftNoteList.Remove(leftNote); }
+        if (rightNote != null) { notePoolRight.Return(rightNote); rightNoteList.Remove(rightNote); }
+
+        effectManager?.NoteHitEffect();
+        effectManager?.JudgementHitEffect(3); // Miss
+
+        return 3; // Miss 인덱스
+    }
+
+    // ==================== 유틸 ====================
+    private void CleanNoteList(List<GameObject> noteList)
+    {
+        noteList.RemoveAll(note => note == null || !note.activeSelf);
+    }
+
+    private GameObject GetFirstActiveNote(List<GameObject> list)
+    {
+        foreach (var note in list)
+        {
+            if (note != null && note.activeSelf)
+                return note;
+        }
+        return null;
+    }
+
+    private int GetJudgementIndex(GameObject note, Vector2[] timingBoxes)
+    {
+        if (note == null) return -1;
+
+        float x = note.transform.localPosition.x;
+        for (int i = 0; i < timingBoxes.Length; i++)
+        {
+            if (timingBoxes[i].x <= x && x <= timingBoxes[i].y)
+                return i;
+        }
+
+        return -1;
+    }
+
+    // ==================== 도우미 ====================
+    private ObjectPool GetPool(NoteDirection dir)
+    {
+        return dir == NoteDirection.Left ? notePoolLeft : notePoolRight;
+    }
+
+    private Transform GetSpawnPoint(NoteDirection dir)
+    {
+        return dir == NoteDirection.Left ? spawnPointLeft : spawnPointRight;
+    }
+
+    private List<GameObject> GetNoteList(NoteDirection dir)
+    {
+        return dir == NoteDirection.Left ? leftNoteList : rightNoteList;
+    }
+
+    private Vector2[] GetTimingBoxes(NoteDirection dir)
+    {
+        return dir == NoteDirection.Left ? timingBoxesLeft : timingBoxesRight;
     }
 }

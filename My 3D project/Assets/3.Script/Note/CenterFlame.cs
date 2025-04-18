@@ -1,28 +1,25 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
+// 일단 최적화. 다만 지금은 노트가 닿기만 하면 음악 재생이랑 수정 필요함.
+
+[RequireComponent(typeof(AudioSource))]
 public class CenterFlame : MonoBehaviour
 {
-    
-    AudioSource myaudio;
-    [SerializeField] bool musicStart = false;
+    private AudioSource audioSource;
+
+    [SerializeField] private bool hasPlayedAudio = false;
 
     private void Start()
     {
-            myaudio = GetComponent<AudioSource>();
+        audioSource = GetComponent<AudioSource>();
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (!musicStart)
+        if (!hasPlayedAudio && other.CompareTag("Note"))
         {
-            if(other.CompareTag("Note"))
-            {
-                myaudio.Play();
-                musicStart = true;
-            }
+            audioSource.Play();
+            hasPlayedAudio = true;
         }
     }
 }
