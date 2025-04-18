@@ -57,7 +57,6 @@ public class NoteBase : MonoBehaviour
 
     private void HandleMiss()
     {
-        effectManager?.NoteHitEffect();
         effectManager?.JudgementHitEffect(3); // 3번 인덱스 = Miss
 
         ReturnToPool();

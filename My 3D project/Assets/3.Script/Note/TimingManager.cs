@@ -115,33 +115,33 @@ public class TimingManager : MonoBehaviour
         int leftJudgement = GetJudgementIndex(leftNote, timingBoxesLeft);
         int rightJudgement = GetJudgementIndex(rightNote, timingBoxesRight);
 
-        // ✅ 양쪽 판정 모두 성공해야만 유효한 판정
+        // ✅ 양쪽 판정 모두 성공
         if (leftJudgement >= 0 && rightJudgement >= 0)
         {
-            // 노트 반환
             notePoolLeft.Return(leftNote);
             notePoolRight.Return(rightNote);
             leftNoteList.Remove(leftNote);
             rightNoteList.Remove(rightNote);
 
-            // ✅ 더 나쁜 판정을 기준으로 사용
             int result = Mathf.Max(leftJudgement, rightJudgement);
 
-            // 이펙트 실행
-            effectManager?.NoteHitEffect();
-            effectManager?.JudgementHitEffect(result);
+            // ✅ 조건부 이펙트 분리
+            if (result <= 1) // Perfect or Good
+                effectManager?.NoteHitEffect();
 
-            return result; // 판정 인덱스 반환
+            effectManager?.JudgementHitEffect(result); // 항상 실행됨
+
+            return result;
         }
 
-        // ❌ Miss 판정 처리
+        // ❌ Miss 처리
         if (leftNote != null) { notePoolLeft.Return(leftNote); leftNoteList.Remove(leftNote); }
         if (rightNote != null) { notePoolRight.Return(rightNote); rightNoteList.Remove(rightNote); }
 
-        effectManager?.NoteHitEffect();
+        // ✅ Miss는 Judgement만
         effectManager?.JudgementHitEffect(3); // Miss
 
-        return 3; // Miss 인덱스
+        return 3;
     }
 
     // ==================== 유틸 ====================
