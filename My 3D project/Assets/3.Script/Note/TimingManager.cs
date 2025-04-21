@@ -119,7 +119,7 @@ public class TimingManager : MonoBehaviour
         int leftJudgement = GetJudgementIndex(leftNote, timingBoxesLeft);
         int rightJudgement = GetJudgementIndex(rightNote, timingBoxesRight);
 
-        // ✅ 양쪽 판정 모두 성공
+        //  양쪽 판정 모두 성공
         if (leftJudgement >= 0 && rightJudgement >= 0)
         {
             notePoolLeft.Return(leftNote);
@@ -129,17 +129,17 @@ public class TimingManager : MonoBehaviour
 
             int result = Mathf.Max(leftJudgement, rightJudgement);
 
-            // ✅ Perfect 또는 Good에만 NoteHitEffect 출력
+            // Perfect 또는 Good에만 NoteHitEffect 출력
             if (result <= 1)
                 effectManager?.NoteHitEffect();
 
-            // ✅ 모든 판정에 JudgementEffect 출력
+            //  모든 판정에 JudgementEffect 출력
             effectManager?.JudgementHitEffect(result);
 
-            // ✅ 판정 기록
+            //  판정 기록
             scoreManager?.AddJudgement(result);
 
-            // ✅ 콤보 처리
+            //  콤보 처리
             if (result >= 2) // Bad or worse
                 comboManager?.ResetCombo();
             else
@@ -148,7 +148,7 @@ public class TimingManager : MonoBehaviour
             return result;
         }
 
-        // ❌ Miss 처리
+        //  Miss 처리
         if (leftNote != null)
         {
             notePoolLeft.Return(leftNote);

@@ -15,7 +15,7 @@ public class NoteBase : MonoBehaviour
     private ObjectPool notePool;
     private TimingManager timingManager;
     private EffectManager effectManager;
-    private ComboManager comboManager; // ✅ 콤보 매니저 추가
+    private ComboManager comboManager; //  콤보 매니저 추가
 
     private Vector3 moveDir;
 
@@ -30,7 +30,7 @@ public class NoteBase : MonoBehaviour
         moveDir = (direction == NoteDirection.Left) ? Vector3.right : Vector3.left;
 
         effectManager ??= FindObjectOfType<EffectManager>();
-        comboManager ??= FindObjectOfType<ComboManager>(); // ✅ 콤보 매니저 연결
+        comboManager ??= FindObjectOfType<ComboManager>(); //  콤보 매니저 연결
     }
 
     private void Update()
@@ -51,10 +51,10 @@ public class NoteBase : MonoBehaviour
     private void HandleMiss()
     {
         effectManager?.JudgementHitEffect(3);   // 3번 인덱스 = Miss
-        comboManager?.ResetCombo();             // ✅ 콤보 리셋
+        comboManager?.ResetCombo();             //  콤보 리셋
         ReturnToPool();
 
-        Debug.Log("❌ MissZone 트리거 → Miss 판정 + 콤보 초기화");
+        Debug.Log(" MissZone 트리거 → Miss 판정 + 콤보 초기화");
     }
 
     private void ReturnToPool()

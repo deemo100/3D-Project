@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class ScoreManager : MonoBehaviour
 {
-    // ✅ 판정별 카운트 배열: 0 = Perfect, 1 = Good, 2 = Bad, 3 = Miss
+    //  판정별 카운트 배열: 0 = Perfect, 1 = Good, 2 = Bad, 3 = Miss
     private int[] judgementCounts = new int[4];
 
     // ==================== API ====================

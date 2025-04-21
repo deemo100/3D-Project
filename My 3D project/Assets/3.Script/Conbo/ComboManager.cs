@@ -23,7 +23,7 @@ public class ComboManager : MonoBehaviour
     public void IncrementCombo(int amount = 1)
     {
         currentCombo += amount;
-        comboText.text = currentCombo.ToString("D3"); // ✅ 항상 3자리 숫자
+        comboText.text = currentCombo.ToString("D3"); //  항상 3자리 숫자
     }
 
     /// <summary>

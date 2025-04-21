@@ -42,8 +42,8 @@ public class GameTimer : MonoBehaviour
 
     private void OnTimeOver()
     {
-        Debug.Log("⏰ 제한 시간 종료!");
-        // TODO: 게임 종료 처리, UI 변경 등 추가 가능
+        Debug.Log(" 제한 시간 종료!");
+        GameManager.Instance?.GameOver(); // ✅ GameManager에 게임 오버 요청
     }
 
     public void StopTimer() => isTimerRunning = false;

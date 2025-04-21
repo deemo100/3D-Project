@@ -60,7 +60,7 @@ public class NoteManager : MonoBehaviour
         if (noteBase != null)
         {
             noteBase.direction = dir;
-            noteBase.Init(pool, centerLeft, centerRight, dir, timingManager); // ✅ 수정됨
+            noteBase.Init(pool, centerLeft, centerRight, dir, timingManager); 
         }
         else
         {
@@ -73,4 +73,5 @@ public class NoteManager : MonoBehaviour
         else
             timingManager.rightNoteList.Add(note);
     }
+    
 }

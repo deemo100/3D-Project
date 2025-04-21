@@ -4,6 +4,8 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
 {
+    [Header("애니메이션")]
+    [SerializeField] private Animator animator;
     private static readonly int FORWARD = Animator.StringToHash("Forward");
     private static readonly int BACKWARD = Animator.StringToHash("Backward");
     private static readonly int LEFT = Animator.StringToHash("Left");
@@ -12,7 +14,9 @@ public class PlayerController : MonoBehaviour
     private static readonly int FSPIN = Animator.StringToHash("Fspin");
     private static readonly int ROLL = Animator.StringToHash("Roll");
     private static readonly int ISGROUD = Animator.StringToHash("Isground");
-
+    private static readonly int BOUNCE = Animator.StringToHash("Bounce");
+    private static readonly int DEAD = Animator.StringToHash("Dead");
+    
     [Header("이동 설정")]
     public float dashForce = 20f;
     private bool isDashing;
@@ -22,7 +26,7 @@ public class PlayerController : MonoBehaviour
     public int maxJumpCount = 2;
     [SerializeField] private int jumpCount;
     private bool isBoostDash;
-    private bool hasAirDashed;
+   
 
     [Header("지면 체크")]
     public LayerMask groundLayer;
@@ -36,8 +40,6 @@ public class PlayerController : MonoBehaviour
     private Rigidbody rigid;
     private TimingManager timingManager;
 
-    [SerializeField] private Animator animator;
-
     private readonly KeyCode[] triggerKeys = {
         KeyCode.Space, KeyCode.F,
         KeyCode.W, KeyCode.A, KeyCode.S, KeyCode.D
@@ -48,6 +50,11 @@ public class PlayerController : MonoBehaviour
     private bool jumpTriggered = false;
     private bool boostTriggered = false;
 
+    public static bool noMovePlayer = true;
+    
+    private int airDashCount = 0;
+    private const int maxAirDashCount = 1; // 공중 대시 1회만 허용
+    
     private void Awake()
     {
         rigid = GetComponent<Rigidbody>();
@@ -64,6 +71,8 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        if (!noMovePlayer) return; // 게임 오버 시 전체 입력 중지
+
         HandleGroundCheck();
         HandleNoteInput();
         HandleDashBoostInput();
@@ -76,7 +85,7 @@ public class PlayerController : MonoBehaviour
     {
         foreach (KeyCode key in triggerKeys)
         {
-            if (Input.GetKeyDown(key))
+            if (Input.GetKeyDown(key) && noMovePlayer)
             {
                 lastJudgement = timingManager.CheckDualTiming();
                 movementTriggered = false;
@@ -85,8 +94,14 @@ public class PlayerController : MonoBehaviour
 
                 if (lastJudgement == 3 && isGroundBoostReady)
                 {
-                    isGroundBoostReady = false; // Miss → 차지 해제
+                    isGroundBoostReady = false;
                     Debug.Log("❌ Miss 판정 → 차지 해제");
+                }
+
+                // ✅ 공중 상태에서 F 키면 → 낙하 연출 실행
+                if (key == KeyCode.F && !isGrounded && lastJudgement != 3)
+                {
+                    PerformAirFall(lastJudgement);
                 }
 
                 break;
@@ -134,8 +149,10 @@ public class PlayerController : MonoBehaviour
 
     private void TryDash(Vector3 direction)
     {
-        if (!isGrounded && hasAirDashed) return;
-
+        
+        if (!isGrounded && airDashCount >= maxAirDashCount)
+            return;
+        
         float force = lastJudgement switch
         {
             0 => dashForce * 1.5f,
@@ -155,8 +172,7 @@ public class PlayerController : MonoBehaviour
 
         StartCoroutine(DashCoroutine(direction, force));
 
-        if (!isGrounded)
-            hasAirDashed = true;
+       
     }
 
     private IEnumerator DashCoroutine(Vector3 direction, float force)
@@ -166,7 +182,7 @@ public class PlayerController : MonoBehaviour
         float duration = 0.2f;
         if (isGroundBoostReady)
         {
-            duration *= 2f; // 차지 상태면 이동 거리 2배
+            duration *= 2f;
             isGroundBoostReady = false;
             Debug.Log("차지: 이동 거리 2배");
         }
@@ -184,6 +200,12 @@ public class PlayerController : MonoBehaviour
 
         rigid.velocity = new Vector3(0f, rigid.velocity.y, 0f);
         isDashing = false;
+
+        if (!isGrounded)
+        {
+            airDashCount++;
+            Debug.Log($" 공중 대시 사용: {airDashCount}/{maxAirDashCount}");
+        }
     }
 
     // ==================== 차지 입력 ====================
@@ -193,7 +215,7 @@ public class PlayerController : MonoBehaviour
         {
             isGroundBoostReady = true;
             boostTriggered = true;
-            animator.SetTrigger(FSPIN); // ✅ 회전 대신 애니메이션만 재생
+            animator.SetTrigger(FSPIN); //  회전 대신 애니메이션만 재생
         }
     }
 
@@ -216,11 +238,12 @@ public class PlayerController : MonoBehaviour
             {
                 animator.SetTrigger(JUMP); // 1단 점프
             }
-            else
+            if (jumpCount == 2)
             {
                 animator.SetTrigger(ROLL);
+                airDashCount = 0; // ✅ 공중 대시 1회 재허용
+                Debug.Log(" 2단 점프 후 공중 대시 재허용 (1회만)");
             }
-            
             
             if (isGroundBoostReady)
             {
@@ -231,7 +254,31 @@ public class PlayerController : MonoBehaviour
             Debug.Log($"{jumpCount}단 점프 실행");
         }
     }
+    
+    
+    private void PerformAirFall(int judgement)
+    {
+        // 하강 속도 세기 설정 (판정에 따라 다르게도 가능)
+        float fallPower = jumpForce * 4f;
 
+        rigid.velocity = new Vector3(0f, -fallPower, 0f);
+
+        // 애니메이션
+        animator.SetTrigger(BOUNCE);
+
+        // ✅ 이펙트 연동
+        EffectManager effectManager = FindObjectOfType<EffectManager>();
+        if (effectManager != null)
+        {
+            effectManager.JudgementHitEffect(judgement); // Perfect = 0, Good = 1, etc
+            effectManager.NoteHitEffect(); // 노트 충돌 이펙트
+        }
+
+        // ✅ 사운드/카메라/진동도 추가 가능
+        Debug.Log($"🌟 판정({judgement}) 성공 → 공중 하강 연출 실행");
+    }
+    
+    
     // ==================== 지면 체크 ====================
   
     private void HandleGroundCheck()
@@ -242,8 +289,8 @@ public class PlayerController : MonoBehaviour
         if (isGrounded && !wasGrounded)
         {
             jumpCount = 0;
-            hasAirDashed = false;
-            animator.SetBool(ISGROUD, true); // 착지 애니메이션 상태
+            airDashCount = 0; // ✅ 리셋
+            animator.SetBool(ISGROUD, true);
         }
 
         // 공중에 떠 있는 동안
@@ -255,6 +302,11 @@ public class PlayerController : MonoBehaviour
         wasGrounded = isGrounded;
     }
 
+    public void TriggerDeathAnimation()
+    {
+        animator.SetTrigger(DEAD);
+    }
+    
     // ==================== 디버그 시각화 ====================
     private void OnDrawGizmosSelected()
     {
