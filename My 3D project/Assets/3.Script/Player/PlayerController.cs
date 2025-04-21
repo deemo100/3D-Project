@@ -4,6 +4,15 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
 {
+    private static readonly int FORWARD = Animator.StringToHash("Forward");
+    private static readonly int BACKWARD = Animator.StringToHash("Backward");
+    private static readonly int LEFT = Animator.StringToHash("Left");
+    private static readonly int RIGHT = Animator.StringToHash("Right");
+    private static readonly int JUMP = Animator.StringToHash("Jump");
+    private static readonly int FSPIN = Animator.StringToHash("Fspin");
+    private static readonly int ROLL = Animator.StringToHash("Roll");
+    private static readonly int ISGROUD = Animator.StringToHash("Isground");
+
     [Header("이동 설정")]
     public float dashForce = 20f;
     private bool isDashing;
@@ -23,10 +32,11 @@ public class PlayerController : MonoBehaviour
     private bool wasGrounded;
 
     private bool isGroundBoostReady;
-    private bool isRotating;
 
     private Rigidbody rigid;
     private TimingManager timingManager;
+
+    [SerializeField] private Animator animator;
 
     private readonly KeyCode[] triggerKeys = {
         KeyCode.Space, KeyCode.F,
@@ -87,15 +97,31 @@ public class PlayerController : MonoBehaviour
     // ==================== 이동 처리 ====================
     private void HandleDashInput()
     {
-        if (isDashing || isRotating || lastJudgement == 3 || movementTriggered)
+        if (isDashing || lastJudgement == 3 || movementTriggered)
             return;
 
         Vector3 inputDir = Vector3.zero;
 
-        if (Input.GetKeyDown(KeyCode.W)) inputDir += transform.forward;
-        if (Input.GetKeyDown(KeyCode.S)) inputDir -= transform.forward;
-        if (Input.GetKeyDown(KeyCode.A)) inputDir -= transform.right;
-        if (Input.GetKeyDown(KeyCode.D)) inputDir += transform.right;
+        if (Input.GetKeyDown(KeyCode.W))
+        {
+            inputDir += transform.forward;
+            animator.SetTrigger(FORWARD);
+        }
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            inputDir -= transform.forward;
+            animator.SetTrigger(BACKWARD);
+        }
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            inputDir -= transform.right;
+            animator.SetTrigger(LEFT);
+        }
+        if (Input.GetKeyDown(KeyCode.D))
+        {
+            inputDir += transform.right;
+            animator.SetTrigger(RIGHT);
+        }
 
         inputDir.y = 0f;
         if (inputDir != Vector3.zero)
@@ -118,12 +144,11 @@ public class PlayerController : MonoBehaviour
             _ => 0f,
         };
 
-        // ✅ 2단 점프 후 강화 대시
         if (!isGrounded && isBoostDash)
         {
             force *= 2f;
             isBoostDash = false;
-            Debug.Log("🕊️ 공중 강화 대시: 2배 거리");
+            Debug.Log(" 공중 강화 대시: 2배 거리");
         }
 
         if (force <= 0f) return;
@@ -134,7 +159,6 @@ public class PlayerController : MonoBehaviour
             hasAirDashed = true;
     }
 
-
     private IEnumerator DashCoroutine(Vector3 direction, float force)
     {
         isDashing = true;
@@ -144,7 +168,7 @@ public class PlayerController : MonoBehaviour
         {
             duration *= 2f; // 차지 상태면 이동 거리 2배
             isGroundBoostReady = false;
-            Debug.Log("🌀 차지: 이동 거리 2배");
+            Debug.Log("차지: 이동 거리 2배");
         }
 
         float timer = 0f;
@@ -165,32 +189,12 @@ public class PlayerController : MonoBehaviour
     // ==================== 차지 입력 ====================
     private void HandleDashBoostInput()
     {
-        if (Input.GetKeyDown(KeyCode.F) && isGrounded && !isRotating && !boostTriggered && lastJudgement != 3)
+        if (Input.GetKeyDown(KeyCode.F) && isGrounded && !boostTriggered && lastJudgement != 3)
         {
             isGroundBoostReady = true;
-            StartCoroutine(RotatePlayer(0.3f));
             boostTriggered = true;
+            animator.SetTrigger(FSPIN); // ✅ 회전 대신 애니메이션만 재생
         }
-    }
-
-    private IEnumerator RotatePlayer(float duration)
-    {
-        isRotating = true;
-
-        float elapsed = 0f;
-        float startY = transform.eulerAngles.y;
-        float endY = startY + 360f;
-
-        while (elapsed < duration)
-        {
-            float yRotation = Mathf.Lerp(startY, endY, elapsed / duration);
-            transform.eulerAngles = new Vector3(0f, yRotation, 0f);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        transform.eulerAngles = new Vector3(0f, endY, 0f);
-        isRotating = false;
     }
 
     // ==================== 점프 입력 ====================
@@ -207,10 +211,21 @@ public class PlayerController : MonoBehaviour
             jumpCount++;
             jumpTriggered = true;
 
+
+            if (jumpCount == 1)
+            {
+                animator.SetTrigger(JUMP); // 1단 점프
+            }
+            else
+            {
+                animator.SetTrigger(ROLL);
+            }
+            
+            
             if (isGroundBoostReady)
             {
-                isGroundBoostReady = false; // 점프 시 차지 해제
-                Debug.Log("🧯 점프 시 차지 해제");
+                isGroundBoostReady = false;
+                Debug.Log(" 점프 시 차지 해제");
             }
 
             Debug.Log($"{jumpCount}단 점프 실행");
@@ -218,14 +233,23 @@ public class PlayerController : MonoBehaviour
     }
 
     // ==================== 지면 체크 ====================
+  
     private void HandleGroundCheck()
     {
         isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayer);
 
+        // 착지했을 때
         if (isGrounded && !wasGrounded)
         {
             jumpCount = 0;
             hasAirDashed = false;
+            animator.SetBool(ISGROUD, true); // 착지 애니메이션 상태
+        }
+
+        // 공중에 떠 있는 동안
+        if (!isGrounded && wasGrounded)
+        {
+            animator.SetBool(ISGROUD, false);
         }
 
         wasGrounded = isGrounded;
