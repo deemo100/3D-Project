@@ -31,7 +31,7 @@ public class PlayerController : MonoBehaviour
     [Header("지면 체크")]
     public LayerMask groundLayer;
     public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
+    public Vector3 groundCheckBoxSize = new Vector3(0.4f, 0.1f, 0.4f); // 새로 추가
     private bool isGrounded;
     private bool wasGrounded;
 
@@ -283,17 +283,21 @@ public class PlayerController : MonoBehaviour
   
     private void HandleGroundCheck()
     {
-        isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayer);
+        isGrounded = Physics.CheckBox
+        (
+            groundCheck.position,
+            groundCheckBoxSize / 2f,
+            Quaternion.identity,
+            groundLayer
+        );
 
-        // 착지했을 때
         if (isGrounded && !wasGrounded)
         {
             jumpCount = 0;
-            airDashCount = 0; // ✅ 리셋
+            airDashCount = 0;
             animator.SetBool(ISGROUD, true);
         }
 
-        // 공중에 떠 있는 동안
         if (!isGrounded && wasGrounded)
         {
             animator.SetBool(ISGROUD, false);
@@ -311,7 +315,7 @@ public class PlayerController : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         if (groundCheck == null) return;
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireCube(groundCheck.position, groundCheckBoxSize);
     }
 }
