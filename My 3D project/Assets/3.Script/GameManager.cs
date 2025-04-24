@@ -41,10 +41,24 @@ public class GameManager : MonoBehaviour
         if (player != null)
             player.TriggerDeathAnimation();
         
+        // ✅ 마우스 커서 해제
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        
     }
 
     public void RestartGame()
     {
+        // ✅ 마우스 다시 잠그기
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
+
+    public void ExitGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+    
 }

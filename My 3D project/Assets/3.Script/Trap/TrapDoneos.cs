@@ -42,7 +42,7 @@ public class TrapDoneos : MonoBehaviour
         if (collision.gameObject.CompareTag("Player"))
         {
             GameManager.Instance.GameOver();
-            Debug.Log("💥 TrapDoneos가 플레이어와 충돌 - 게임 오버!");
+            Debug.Log(" TrapDoneos가 플레이어와 충돌 - 게임 오버!");
         }
     }
 }

@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-public class TrapManager : MonoBehaviour
+public class DoneosBOX : MonoBehaviour
 {
     [Header("프리팹들")]
     public GameObject trapPrefab1;
