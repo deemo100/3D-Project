@@ -49,16 +49,16 @@ public class GameManager : MonoBehaviour
 
     public void RestartGame()
     {
-        // ✅ 마우스 다시 잠그기
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        // 씬 이름으로 이동
+        SceneManager.LoadScene("Chapter1");
     }
 
     public void ExitGame()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        SceneManager.LoadScene("Title");
     }
     
 }
