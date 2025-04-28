@@ -2,38 +2,60 @@ using UnityEngine;
 
 public class CameraCollision : MonoBehaviour
 {
-    public Transform target; // 따라갈 대상 (예: CameraPivot)
-    public float distance = 3f;
-    public float minDistance = 0.5f;
-    public float smoothSpeed = 10f;
-    public float sphereRadius = 0.2f;
-    public LayerMask collisionLayers;
+    [Header("Target Settings")]
+    [SerializeField] private Transform target;
 
-    private Vector3 currentPosition;
+    [Header("Collision Settings")]
+    [SerializeField] private float maxDistance = 3f;
+    [SerializeField] private float minDistance = 0.5f;
+    [SerializeField] private float sphereRadius = 0.2f;
+    [SerializeField] private LayerMask collisionLayers;
 
-    void LateUpdate()
+    [Header("Movement Settings")]
+    [SerializeField] private float smoothSpeed = 10f;
+
+    private Vector3 currentVelocity;
+    private RaycastHit hitInfo;
+
+    private void LateUpdate()
     {
-        Vector3 desiredPosition = target.position - target.forward * distance;
+        if (target == null)
+            return;
 
-        // 충돌 체크 (SphereCast 사용)
-        RaycastHit hit;
-        bool isHit = Physics.SphereCast(
-            target.position,
-            sphereRadius,
-            -target.forward,
-            out hit,
-            distance,
-            collisionLayers
+        HandleCollision();
+        LookAtTarget();
+    }
+
+    private void HandleCollision()
+    {
+        Vector3 desiredPosition = target.position - target.forward * maxDistance;
+
+        bool hasCollision = Physics.SphereCast(
+            origin: target.position,
+            radius: sphereRadius,
+            direction: -target.forward,
+            hitInfo: out hitInfo,
+            maxDistance: maxDistance,
+            layerMask: collisionLayers
         );
 
-        float targetDistance = isHit ? Mathf.Clamp(hit.distance, minDistance, distance) : distance;
-        Vector3 finalPosition = target.position - target.forward * targetDistance;
+        float adjustedDistance = hasCollision 
+            ? Mathf.Clamp(hitInfo.distance, minDistance, maxDistance)
+            : maxDistance;
 
-        // 부드럽게 이동
-        currentPosition = Vector3.Lerp(transform.position, finalPosition, Time.deltaTime * smoothSpeed);
-        transform.position = currentPosition;
+        Vector3 targetPosition = target.position - target.forward * adjustedDistance;
 
-        // 항상 타겟을 바라봄
+        transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * smoothSpeed);
+    }
+
+    private void LookAtTarget()
+    {
         transform.LookAt(target);
+    }
+
+    // public 메서드로 타겟 설정 가능
+    public void SetTarget(Transform newTarget)
+    {
+        target = newTarget;
     }
 }
