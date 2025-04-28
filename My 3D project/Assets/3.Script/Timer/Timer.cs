@@ -1,26 +1,66 @@
 using UnityEngine;
 using TMPro;
+using System.Collections;
 
 public class GameTimer : MonoBehaviour
 {
-    [Header("제한 시간 설정")]
-    [SerializeField] private float totalTime = 60f; // 제한 시간 (초)
-    private float currentTime;
-
     [Header("UI 참조")]
-    [SerializeField] private TMP_Text timerText; // TextMeshPro 텍스트
+    [SerializeField] private TMP_Text timerText;
 
+    [Header("팝 애니메이션 설정")]
+    [SerializeField] private float popScale = 1.3f; // 얼마나 커질지
+    [SerializeField] private float popDuration = 0.1f; // 애니메이션 시간
+
+    private float totalTime;
+    private float currentTime;
     private bool isTimerRunning = true;
+
+    private int lastDisplayedSeconds; // 직전 표시된 초
+    private Coroutine popCoroutine;
 
     private void Start()
     {
+        RectTransform rectTransform = timerText.GetComponent<RectTransform>();
+
+        //  기존 anchoredPosition 기억
+        Vector2 originalAnchoredPosition = rectTransform.anchoredPosition;
+
+        //  피벗을 중앙으로 설정
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+
+        //  피벗 변경 후 anchoredPosition 보정
+        rectTransform.anchoredPosition = originalAnchoredPosition + new Vector2(
+            rectTransform.rect.width * (rectTransform.pivot.x - 0f),
+            rectTransform.rect.height * (rectTransform.pivot.y - 0f)
+        );
+
+        //  추가: 살짝 아래로 내리기 (Y값 조정)
+        rectTransform.anchoredPosition += new Vector2(0f, -50f); // 여기서 -10f 만큼 아래로 내림
+
+        if (SoundManager.Instance != null && SoundManager.Instance.GetGameStartSoundLength() > 0f)
+        {
+            totalTime = SoundManager.Instance.GetGameStartSoundLength() + 5f;
+        }
+        else
+        {
+            Debug.LogWarning("GameTimer: gameStartSound가 설정되지 않았거나 길이를 가져올 수 없습니다!");
+            totalTime = 65f;
+        }
+
         currentTime = totalTime;
+        lastDisplayedSeconds = Mathf.CeilToInt(currentTime);
         UpdateTimerUI();
     }
-
     private void Update()
     {
         if (!isTimerRunning) return;
+
+        // ✅ 게임 클리어 or 게임 오버 상태면 타이머 멈추기
+        if (GameManager.Instance != null && (GameManager.Instance.IsGameClear || GameManager.Instance.IsGameOver))
+        {
+            StopTimer();
+            return;
+        }
 
         currentTime -= Time.deltaTime;
 
@@ -34,16 +74,65 @@ public class GameTimer : MonoBehaviour
         UpdateTimerUI();
     }
 
+    public float GetRemainingTime()
+    {
+        return currentTime;
+    }
+    
     private void UpdateTimerUI()
     {
         int seconds = Mathf.CeilToInt(currentTime);
-        timerText.text = seconds.ToString("D2"); // 00, 01, 02 형태로 표시
+
+        // 초가 변했을 때만 팝 애니메이션 실행
+        if (seconds != lastDisplayedSeconds)
+        {
+            lastDisplayedSeconds = seconds;
+            PlayPopAnimation();
+        }
+
+        timerText.text = seconds.ToString("D2");
+    }
+
+    private void PlayPopAnimation()
+    {
+        if (popCoroutine != null)
+            StopCoroutine(popCoroutine);
+
+        popCoroutine = StartCoroutine(PopAnimationCoroutine());
+    }
+
+    private IEnumerator PopAnimationCoroutine()
+    {
+        Vector3 originalScale = timerText.transform.localScale;
+        Vector3 targetScale = originalScale * popScale;
+
+        float timer = 0f;
+
+        // 스케일 키우기
+        while (timer < popDuration)
+        {
+            timerText.transform.localScale = Vector3.Lerp(originalScale, targetScale, timer / popDuration);
+            timer += Time.deltaTime;
+            yield return null;
+        }
+        timerText.transform.localScale = targetScale;
+
+        timer = 0f;
+
+        // 스케일 다시 줄이기
+        while (timer < popDuration)
+        {
+            timerText.transform.localScale = Vector3.Lerp(targetScale, originalScale, timer / popDuration);
+            timer += Time.deltaTime;
+            yield return null;
+        }
+        timerText.transform.localScale = originalScale;
     }
 
     private void OnTimeOver()
     {
-        Debug.Log(" 제한 시간 종료!");
-        GameManager.Instance?.GameOver(); // ✅ GameManager에 게임 오버 요청
+        Debug.Log("제한 시간 종료!");
+        GameManager.Instance?.GameOver();
     }
 
     public void StopTimer() => isTimerRunning = false;

@@ -35,9 +35,15 @@ public class NoteBase : MonoBehaviour
 
     private void Update()
     {
+        // ✅ 게임 클리어 상태면 바로 리턴
+        if (GameManager.Instance != null && GameManager.Instance.IsGameClear)
+        {
+            ReturnToPool();
+            return;
+        }
+
         transform.localPosition += moveDir * noteSpeed * Time.deltaTime;
     }
-
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("MissZone") && !judged)
@@ -53,8 +59,7 @@ public class NoteBase : MonoBehaviour
         effectManager?.JudgementHitEffect(3);   // 3번 인덱스 = Miss
         comboManager?.ResetCombo();             //  콤보 리셋
         ReturnToPool();
-
-        Debug.Log(" MissZone 트리거 → Miss 판정 + 콤보 초기화");
+        
     }
 
     private void ReturnToPool()

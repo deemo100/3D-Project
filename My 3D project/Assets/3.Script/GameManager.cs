@@ -6,10 +6,13 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance;
 
     [Header("UI")]
-    [SerializeField] private GameObject gameOverPanel;
+    [SerializeField] private GameObject gameOverPanel;  // 게임 오버용 패널
+    [SerializeField] private GameObject gameClearPanel; // ✅ 게임 클리어용 패널 추가
 
     private bool isGameOver = false;
-
+    private bool isGameClear = false;
+    public bool IsGameOver => isGameOver;
+    public bool IsGameClear => isGameClear;
     private void Awake()
     {
         if (Instance == null)
@@ -18,44 +21,76 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
     }
 
+    private void Start()
+    {
+        SoundManager.Instance?.PlayGameStartBGM();
+    }
+    
     public void GameOver()
     {
-        if (isGameOver) return;
+        if (isGameOver || isGameClear) return;
 
         isGameOver = true;
 
-        // ✅ 노트 생성 멈추기
         var noteManager = FindObjectOfType<NoteManager>();
         if (noteManager != null)
             noteManager.gameObject.SetActive(false);
 
-        // ✅ UI 활성화
         if (gameOverPanel != null)
-            gameOverPanel.SetActive(true);
+            gameOverPanel.SetActive(true); // ✅ 게임 오버 패널만 활성화
 
-        // ✅ 플레이어 조작 멈추기
         PlayerController.noMovePlayer = true;
 
-        // ✅ 플레이어 애니메이션 - Dead Trigger
         var player = FindObjectOfType<PlayerController>();
         if (player != null)
             player.TriggerDeathAnimation();
-        
-        // ✅ 마우스 커서 해제
+
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        
+
+        SoundManager.Instance?.PlayGameOverSound();
+        SoundManager.Instance?.StopBGM();
     }
 
+    public void GameClear()
+    {
+        if (isGameOver || isGameClear) return;
+
+        isGameClear = true;
+
+        var noteManager = FindObjectOfType<NoteManager>();
+        if (noteManager != null)
+            noteManager.gameObject.SetActive(false);
+
+        if (gameClearPanel != null)
+            gameClearPanel.SetActive(true);
+
+        // ✅ 클리어 UI 세팅
+        var clearPanelUI = FindObjectOfType<ClearPanelUI>();
+        if (clearPanelUI != null)
+            clearPanelUI.SetupClearUI();
+
+        PlayerController.noMovePlayer = true;
+
+        var player = FindObjectOfType<PlayerController>();
+        if (player != null)
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        SoundManager.Instance?.PlayGoalSound();
+        SoundManager.Instance?.StopBGM();
+    }
+    
     public void RestartGame()
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-
-        // 씬 이름으로 이동
         SceneManager.LoadScene("Chapter1");
     }
 
+
+ 
     public void ExitGame()
     {
         SceneManager.LoadScene("Title");

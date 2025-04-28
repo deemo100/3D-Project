@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class GoldScore : MonoBehaviour
 {
-    public int scoreValue = 1;       // 획득 시 점수
+    public int scoreValue = 1;        // 획득 시 점수
     public float rotationSpeed = 45f; // 초당 회전 속도 (도 단위)
 
     void Update()
@@ -15,10 +15,18 @@ public class GoldScore : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            // 점수 증가 처리
-            //GameManager.Instance.AddScore(scoreValue);
+            ScoreManager scoreManager = FindObjectOfType<ScoreManager>();
+            if (scoreManager != null)
+            {
+                scoreManager.AddScore(scoreValue);
+                Debug.Log($"골드 먹음! 현재 점수: {scoreManager.GetTotalScore()}");
+            }
+            else
+            {
+                Debug.LogWarning("⚠ ScoreManager를 찾을 수 없습니다!");
+            }
 
-            // 오브젝트 파괴
+            SoundManager.Instance?.PlayGoldPickupSound();
             Destroy(gameObject);
         }
     }

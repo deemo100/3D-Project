@@ -37,11 +37,12 @@ public class TimingManager : MonoBehaviour
     [SerializeField] private float spawnInterval = 1.0f;
     private float timer = 0f;
 
-    // ========== 참조 매니저 ==========
+    // ========== 참조 ==========
     private EffectManager effectManager;
     private ScoreManager scoreManager;
     private ComboManager comboManager;
-    
+    private MouseLookController mouseLookController;
+
     // ========== 판정 이름 ==========
     private readonly string[] judgementNames = { "Perfect", "Good", "Bad", "Miss" };
 
@@ -49,6 +50,7 @@ public class TimingManager : MonoBehaviour
     void Start()
     {
         InitTimingBoxes();
+        mouseLookController = FindObjectOfType<MouseLookController>();
         effectManager = FindObjectOfType<EffectManager>();
         scoreManager = FindObjectOfType<ScoreManager>();
         comboManager = FindObjectOfType<ComboManager>();
@@ -106,20 +108,22 @@ public class TimingManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 양쪽 노트를 동시에 판정하고 결과 인덱스 반환
-    /// 성공 시: 0=Perfect, 1=Good, 2=Bad
-    /// 실패 시: 3=Miss
-    /// </summary>
     public int CheckDualTiming()
     {
+        // ✅ 게임 오버나 클리어 상태라면 판정 자체를 막아버림
+        if (GameManager.Instance != null && (GameManager.Instance.IsGameClear || GameManager.Instance.IsGameOver))
+        {
+            Debug.Log("⚠ 게임 종료 상태 - 판정 불가");
+            return -1; // 판정 안 함
+        }
+
         GameObject leftNote = GetFirstActiveNote(leftNoteList);
         GameObject rightNote = GetFirstActiveNote(rightNoteList);
 
         int leftJudgement = GetJudgementIndex(leftNote, timingBoxesLeft);
         int rightJudgement = GetJudgementIndex(rightNote, timingBoxesRight);
 
-        //  양쪽 판정 모두 성공
+        // 양쪽 판정 모두 성공
         if (leftJudgement >= 0 && rightJudgement >= 0)
         {
             notePoolLeft.Return(leftNote);
@@ -129,18 +133,18 @@ public class TimingManager : MonoBehaviour
 
             int result = Mathf.Max(leftJudgement, rightJudgement);
 
-            // Perfect 또는 Good에만 NoteHitEffect 출력
+            SoundManager.Instance?.PlayJudgementSound(result);
+
             if (result <= 1)
+            {
                 effectManager?.NoteHitEffect();
+                mouseLookController?.ZoomOnce();
+            }
 
-            //  모든 판정에 JudgementEffect 출력
             effectManager?.JudgementHitEffect(result);
-
-            //  판정 기록
             scoreManager?.AddJudgement(result);
 
-            //  콤보 처리
-            if (result >= 2) // Bad or worse
+            if (result >= 2)
                 comboManager?.ResetCombo();
             else
                 comboManager?.IncrementCombo();
@@ -148,7 +152,7 @@ public class TimingManager : MonoBehaviour
             return result;
         }
 
-        //  Miss 처리
+        // Miss 처리
         if (leftNote != null)
         {
             notePoolLeft.Return(leftNote);
@@ -160,11 +164,13 @@ public class TimingManager : MonoBehaviour
             rightNoteList.Remove(rightNote);
         }
 
-        effectManager?.JudgementHitEffect(3); // Miss
+        SoundManager.Instance?.PlayJudgementSound(3);
+
+        effectManager?.JudgementHitEffect(3);
         scoreManager?.AddJudgement(3);
         comboManager?.ResetCombo();
 
-        return 3; // Miss
+        return 3;
     }
 
     // ==================== 유틸 ====================
@@ -211,10 +217,5 @@ public class TimingManager : MonoBehaviour
     private List<GameObject> GetNoteList(NoteDirection dir)
     {
         return dir == NoteDirection.Left ? leftNoteList : rightNoteList;
-    }
-
-    private Vector2[] GetTimingBoxes(NoteDirection dir)
-    {
-        return dir == NoteDirection.Left ? timingBoxesLeft : timingBoxesRight;
     }
 }
