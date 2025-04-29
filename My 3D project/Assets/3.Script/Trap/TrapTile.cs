@@ -10,7 +10,6 @@ public class TrapTile : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        // ✅ Player와 충돌 시 게임 오버
         if (collision.gameObject.CompareTag("Player"))
         {
             GameManager.Instance.GameOver();

@@ -22,20 +22,14 @@ public class GameTimer : MonoBehaviour
     {
         RectTransform rectTransform = timerText.GetComponent<RectTransform>();
 
-        //  기존 anchoredPosition 기억
         Vector2 originalAnchoredPosition = rectTransform.anchoredPosition;
-
-        //  피벗을 중앙으로 설정
         rectTransform.pivot = new Vector2(0.5f, 0.5f);
-
-        //  피벗 변경 후 anchoredPosition 보정
-        rectTransform.anchoredPosition = originalAnchoredPosition + new Vector2(
+        rectTransform.anchoredPosition = originalAnchoredPosition + new Vector2
+        (
             rectTransform.rect.width * (rectTransform.pivot.x - 0f),
             rectTransform.rect.height * (rectTransform.pivot.y - 0f)
         );
-
-        //  추가: 살짝 아래로 내리기 (Y값 조정)
-        rectTransform.anchoredPosition += new Vector2(0f, -50f); // 여기서 -10f 만큼 아래로 내림
+        rectTransform.anchoredPosition += new Vector2(0f, -50f);
 
         if (SoundManager.Instance != null && SoundManager.Instance.GetGameStartSoundLength() > 0f)
         {
@@ -50,12 +44,14 @@ public class GameTimer : MonoBehaviour
         currentTime = totalTime;
         lastDisplayedSeconds = Mathf.CeilToInt(currentTime);
         UpdateTimerUI();
+
+        isTimerRunning = false; //  무조건 타이머를 멈추고 시작한다
     }
     private void Update()
     {
         if (!isTimerRunning) return;
 
-        // ✅ 게임 클리어 or 게임 오버 상태면 타이머 멈추기
+        //  게임 클리어 or 게임 오버 상태면 타이머 멈추기
         if (GameManager.Instance != null && (GameManager.Instance.IsGameClear || GameManager.Instance.IsGameOver))
         {
             StopTimer();
@@ -74,6 +70,8 @@ public class GameTimer : MonoBehaviour
         UpdateTimerUI();
     }
 
+    
+    
     public float GetRemainingTime()
     {
         return currentTime;

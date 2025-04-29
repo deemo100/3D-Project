@@ -37,8 +37,7 @@ public class TrapDoneos : MonoBehaviour
         {
             Destroy(gameObject);
         }
-
-        // ✅ Player와 충돌 시 게임 오버
+        
         if (collision.gameObject.CompareTag("Player"))
         {
             GameManager.Instance.GameOver();

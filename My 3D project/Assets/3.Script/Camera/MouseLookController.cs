@@ -30,6 +30,14 @@ public class MouseLookController : MonoBehaviour
         if (playerBody == null || cameraPivot == null)
             return;
 
+        //  게임 오버 상태일 때 회전 금지
+        if (GameManager.Instance != null && GameManager.Instance.IsGameOver)
+            return;
+        
+        //  게임 클리어 상태일 때 회전 금지
+        if(GameManager.Instance != null && GameManager.Instance.IsGameClear)
+            return; 
+        
         HandleMouseLook();
     }
 
@@ -38,7 +46,7 @@ public class MouseLookController : MonoBehaviour
         cam = Camera.main;
         if (cam == null)
         {
-            Debug.LogError("Camera.main을 찾을 수 없습니다. 카메라가 존재하는지 확인하세요.");
+            Debug.LogError("Camera.main을 찾을 수 없습니다.");
             return;
         }
 

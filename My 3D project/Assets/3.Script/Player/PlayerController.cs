@@ -278,11 +278,5 @@ public class PlayerController : MonoBehaviour
     {
         animator.SetTrigger(DEAD);
     }
-
-    private void OnDrawGizmosSelected()
-    {
-        if (groundCheck == null) return;
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireCube(groundCheck.position, groundCheckBoxSize);
-    }
+    
 }

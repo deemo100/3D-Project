@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 최적화. 수정 여지 있음
-
 public class ObjectPool : MonoBehaviour
 {
     [SerializeField] private GameObject prefab;

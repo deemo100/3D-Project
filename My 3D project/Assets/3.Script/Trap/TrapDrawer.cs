@@ -17,7 +17,7 @@ public class TrapDrawer : MonoBehaviour
 
     IEnumerator StartDelayThenMove()
     {
-        yield return new WaitForSeconds(startDelay); // ✅ 시작 전에 1초 대기
+        yield return new WaitForSeconds(startDelay); // 시작 전에 1초 대기
         StartCoroutine(MoveAndReturnLoop());
     }
 

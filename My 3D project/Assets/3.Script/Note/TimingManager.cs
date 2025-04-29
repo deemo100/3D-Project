@@ -1,12 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 노트 판정 타이밍, 위치, 오브젝트 풀 관리를 담당하는 매니저
-/// - 판정 영역 계산
-/// - 노트 리스트 클린업
-/// - 노트 판정 체크 (양쪽 동시)
-/// </summary>
 public class TimingManager : MonoBehaviour
 {
     // ========== 노트 리스트 ==========
@@ -46,8 +40,11 @@ public class TimingManager : MonoBehaviour
     // ========== 판정 이름 ==========
     private readonly string[] judgementNames = { "Perfect", "Good", "Bad", "Miss" };
 
+    // ========== 퍼즈 여부 ==========
+    public bool IsPaused => GameManager.Instance != null && GameManager.Instance.IsPaused;
+
     // ==================== Unity 이벤트 ====================
-    void Start()
+    private void Start()
     {
         InitTimingBoxes();
         mouseLookController = FindObjectOfType<MouseLookController>();
@@ -56,8 +53,10 @@ public class TimingManager : MonoBehaviour
         comboManager = FindObjectOfType<ComboManager>();
     }
 
-    void Update()
+    private void Update()
     {
+        if (IsPaused) return; // 퍼즈 중이면 판정 업데이트 중단
+
         CleanNoteList(leftNoteList);
         CleanNoteList(rightNoteList);
     }
@@ -108,13 +107,15 @@ public class TimingManager : MonoBehaviour
         }
     }
 
+    // ==================== 판정 ====================
     public int CheckDualTiming()
     {
-        // ✅ 게임 오버나 클리어 상태라면 판정 자체를 막아버림
+        if (IsPaused) return -1; // 퍼즈 중이면 판정 자체를 막는다
+
         if (GameManager.Instance != null && (GameManager.Instance.IsGameClear || GameManager.Instance.IsGameOver))
         {
             Debug.Log("⚠ 게임 종료 상태 - 판정 불가");
-            return -1; // 판정 안 함
+            return -1;
         }
 
         GameObject leftNote = GetFirstActiveNote(leftNoteList);
@@ -123,7 +124,7 @@ public class TimingManager : MonoBehaviour
         int leftJudgement = GetJudgementIndex(leftNote, timingBoxesLeft);
         int rightJudgement = GetJudgementIndex(rightNote, timingBoxesRight);
 
-        // 양쪽 판정 모두 성공
+        // 양쪽 모두 판정 성공
         if (leftJudgement >= 0 && rightJudgement >= 0)
         {
             notePoolLeft.Return(leftNote);

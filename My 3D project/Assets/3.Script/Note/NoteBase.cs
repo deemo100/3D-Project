@@ -35,7 +35,7 @@ public class NoteBase : MonoBehaviour
 
     private void Update()
     {
-        // ✅ 게임 클리어 상태면 바로 리턴
+        //  게임 클리어 상태면 바로 리턴
         if (GameManager.Instance != null && GameManager.Instance.IsGameClear)
         {
             ReturnToPool();
@@ -53,7 +53,7 @@ public class NoteBase : MonoBehaviour
         }
     }
 
-    // ✅ Miss 처리 (이펙트 + 콤보 초기화)
+    //  Miss 처리 (이펙트 + 콤보 초기화)
     private void HandleMiss()
     {
         effectManager?.JudgementHitEffect(3);   // 3번 인덱스 = Miss

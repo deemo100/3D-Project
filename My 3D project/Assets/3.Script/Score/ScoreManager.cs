@@ -3,7 +3,7 @@ using UnityEngine;
 public class ScoreManager : MonoBehaviour
 {
     private int[] judgementCounts = new int[4];
-    private int totalScore = 0; // ✅ 골드 점수 저장
+    private int totalScore = 0; //  골드 점수 저장
 
     public void AddJudgement(int index)
     {
@@ -33,7 +33,7 @@ public class ScoreManager : MonoBehaviour
         return result;
     }
 
-    // ✅ 골드 획득 처리
+    //  골드 획득 처리
     public void AddScore(int amount)
     {
         totalScore += amount;

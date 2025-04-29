@@ -11,6 +11,5 @@ public class SceneLightingReset : MonoBehaviour
         RenderSettings.defaultReflectionMode = DefaultReflectionMode.Skybox;
         DynamicGI.UpdateEnvironment();
         
-        Debug.Log("🌟 Chapter1: Lighting 리셋 완료!");
     }
 }

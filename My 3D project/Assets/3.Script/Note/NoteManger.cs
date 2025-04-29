@@ -26,9 +26,13 @@ public class NoteManager : MonoBehaviour
     [SerializeField] private int bpm = 120;
     private double currentTime = 0d;
 
+    private bool canSpawnNotes = false;
+    
     private void Update()
     {
-        currentTime += Time.deltaTime;
+        if (!canSpawnNotes) return; //  가장 먼저 체크
+    
+        currentTime += Time.deltaTime; //  스폰 가능할 때만 시간 누적
 
         if (bpm > 0 && currentTime >= 60d / bpm)
         {
@@ -37,6 +41,7 @@ public class NoteManager : MonoBehaviour
             currentTime -= 60d / bpm;
         }
     }
+
 
     private void SpawnNote(NoteDirection dir)
     {
@@ -72,6 +77,12 @@ public class NoteManager : MonoBehaviour
             timingManager.leftNoteList.Add(note);
         else
             timingManager.rightNoteList.Add(note);
+    }
+    
+    public void StartSpawningNotes()
+    {
+        canSpawnNotes = true;
+        currentTime = 0d; //  시간 리셋
     }
     
 }

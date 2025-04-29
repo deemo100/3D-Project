@@ -57,7 +57,6 @@ public class TrapMicrowaveOven : MonoBehaviour
         if (collision.gameObject.CompareTag("Player"))
         {
             GameManager.Instance.GameOver();
-            Debug.Log("🔥 전자레인지 트랩 - 플레이어와 충돌하여 게임 오버");
         }
     }
 }

@@ -48,7 +48,7 @@ public class ClearPanelUI : MonoBehaviour
                 achievedConditions++;
         }
 
-        // ✅ 조건 만족 수에 따라 별 활성화
+        //  조건 만족 수에 따라 별 활성화
         if (achievedConditions >= 1)
             star1.SetActive(true);
         if (achievedConditions >= 2)
