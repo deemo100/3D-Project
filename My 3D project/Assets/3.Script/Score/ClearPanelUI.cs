@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class ClearPanelUI : MonoBehaviour
 {
@@ -9,9 +10,11 @@ public class ClearPanelUI : MonoBehaviour
     [SerializeField] private TMP_Text scoreText;
 
     [Header("별 오브젝트")]
-    [SerializeField] private GameObject star1;
-    [SerializeField] private GameObject star2;
-    [SerializeField] private GameObject star3;
+    [SerializeField] private GameObject[] starObjects;
+
+    [Header("별 획득 조건")]
+    [SerializeField] private int comboThreshold = 10;
+    [SerializeField] private int scoreThreshold = 5;
 
     public void SetupClearUI()
     {
@@ -24,36 +27,39 @@ public class ClearPanelUI : MonoBehaviour
         if (timer != null)
         {
             float timeLeft = timer.GetRemainingTime();
-            timeText.text = "TIME: " + Mathf.CeilToInt(timeLeft).ToString();
-
-            if (timeLeft > 0f)
-                achievedConditions++;
+            timeText.text = "TIME: " + Mathf.CeilToInt(timeLeft);
+            if (timeLeft > 0f) achievedConditions++;
         }
 
         if (comboManager != null)
         {
             int maxCombo = comboManager.GetMaxCombo();
-            comboText.text = "COMBO: " + maxCombo.ToString();
-
-            if (maxCombo >= 10)
-                achievedConditions++;
+            comboText.text = "COMBO: " + maxCombo;
+            if (maxCombo >= comboThreshold) achievedConditions++;
         }
 
         if (scoreManager != null)
         {
             int totalScore = scoreManager.GetTotalScore();
-            scoreText.text = "GOLD: " + totalScore.ToString();
-
-            if (totalScore >= 5)
-                achievedConditions++;
+            scoreText.text = "GOLD: " + totalScore;
+            if (totalScore >= scoreThreshold) achievedConditions++;
         }
 
-        //  조건 만족 수에 따라 별 활성화
-        if (achievedConditions >= 1)
-            star1.SetActive(true);
-        if (achievedConditions >= 2)
-            star2.SetActive(true);
-        if (achievedConditions >= 3)
-            star3.SetActive(true);
+        // 별 UI 표시
+        for (int i = 0; i < starObjects.Length; i++)
+            starObjects[i].SetActive(i < achievedConditions);
+
+        // ✅ 씬 이름을 기반으로 PlayerPrefs 키 생성
+        string sceneName = SceneManager.GetActiveScene().name;           // ex: "Chapter2"
+        string stageNumber = sceneName.Replace("Chapter", "Stage");      // → "Stage2"
+        string stageKey = stageNumber + "_Stars";                        // → "Stage2_Stars"
+
+        int savedStars = PlayerPrefs.GetInt(stageKey, 0);
+        if (achievedConditions > savedStars)
+        {
+            PlayerPrefs.SetInt(stageKey, achievedConditions);
+            PlayerPrefs.Save();
+            Debug.Log($"{stageKey} → {achievedConditions}개 저장됨");
+        }
     }
 }

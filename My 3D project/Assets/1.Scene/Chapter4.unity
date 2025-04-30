@@ -6807,6 +6807,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: SM_Prop_CoffeeTable_01 (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 1009811025234856, guid: 32a09e7d21324f242961c75f84bfa182, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 4766462964145918, guid: 32a09e7d21324f242961c75f84bfa182, type: 3}
       propertyPath: m_RootOrder
       value: 44
@@ -8139,10 +8143,7 @@ MonoBehaviour:
   timeText: {fileID: 937346353}
   comboText: {fileID: 785889233}
   scoreText: {fileID: 1828353729}
-  starObjects:
-  - {fileID: 687764036}
-  - {fileID: 601449657}
-  - {fileID: 1395126599}
+  starObjects: []
   comboThreshold: 10
   scoreThreshold: 5
 --- !u!1001 &268784135
@@ -57812,7 +57813,7 @@ Transform:
   m_GameObject: {fileID: 8576977812265548834}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.22, y: -0.73, z: 0}
+  m_LocalPosition: {x: 75, y: 5.6, z: 28.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

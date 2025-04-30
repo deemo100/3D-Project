@@ -3,25 +3,42 @@ using UnityEngine.SceneManagement;
 
 public class TitleManager : MonoBehaviour
 {
-    public GameObject titleLighting; // Title 조명, 볼륨 등 묶어놓은 오브젝트
+    public GameObject titleLighting;       // 타이틀 조명 및 공용 오브젝트
+    public GameObject chapterSetPanel;     // 챕터 선택 UI 패널
 
+    // 챕터 선택 패널 열기
     public void StartGame()
     {
-        //  씬 넘어가기 전에 타이틀 라이트 삭제
-        if (titleLighting != null)
-        {
-            Destroy(titleLighting);
-        }
+        if (chapterSetPanel != null)
+            chapterSetPanel.SetActive(true);
 
-        //  메인 게임 씬으로 이동
-        SceneManager.LoadScene("Chapter1");
+        // 모든 StageStarDisplay 강제 갱신
+        var starDisplays = FindObjectsOfType<StageStarDisplay>();
+        foreach (var display in starDisplays)
+            display.UpdateStars();
     }
 
-    // 게임 종료 버튼에서 호출
+    // 챕터 씬 로드 (ex: Chapter1, Chapter2 ...)
+    public void LoadChapter(string chapterName)
+    {
+        Debug.Log($" 씬 전환 요청: {chapterName}");
+
+        if (titleLighting != null)
+            Destroy(titleLighting);
+
+        SceneManager.LoadScene(chapterName);
+    }
+
+    // 챕터 패널 닫기
+    public void BackToMain()
+    {
+        if (chapterSetPanel != null)
+            chapterSetPanel.SetActive(false);
+    }
+
+    // 게임 종료
     public void ExitGame()
     {
-        // 에디터에선 무시되고, 빌드된 게임에서 정상 종료
-        Debug.Log("게임 종료 요청");
         Application.Quit();
     }
 }
