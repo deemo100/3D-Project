@@ -23,28 +23,28 @@ public class StageButtonManager : MonoBehaviour
         {
             int starCount = PlayerPrefs.GetInt(data.stageKey, 0);
 
-            // ⭐ UI 별 표시
+            //  UI 별 표시
             for (int i = 0; i < data.starIcons.Length; i++)
             {
                 data.starIcons[i].SetActive(i < starCount);
             }
 
-            // ⭐ STAR1, STAR2, STAR3 오브젝트 활성화
+            //  STAR1, STAR2, STAR3 오브젝트 활성화
             for (int i = 0; i < data.starObjects.Length; i++)
             {
                 data.starObjects[i].SetActive(i < starCount);
             }
 
-            // 🔒 잠금 조건 판단
+            // 잠금 조건 판단
             bool isUnlocked = data.unlockRequiredStars <= 0 || IsStageUnlocked(data.unlockRequiredStars);
 
-            // 🔓 잠금 해제 상태
+            //  잠금 해제 상태
             data.stageButton.interactable = isUnlocked;
 
             if (data.lockOverlay != null)
                 data.lockOverlay.SetActive(!isUnlocked);
 
-            Debug.Log($"⭐ {data.stageKey} → {starCount}개");
+            Debug.Log($" {data.stageKey} → {starCount}개");
         }
     }
 
