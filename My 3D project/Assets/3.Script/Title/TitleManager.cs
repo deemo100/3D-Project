@@ -11,11 +11,6 @@ public class TitleManager : MonoBehaviour
     {
         if (chapterSetPanel != null)
             chapterSetPanel.SetActive(true);
-
-        // 모든 StageStarDisplay 강제 갱신
-        var starDisplays = FindObjectsOfType<StageStarDisplay>();
-        foreach (var display in starDisplays)
-            display.UpdateStars();
     }
 
     // 챕터 씬 로드 (ex: Chapter1, Chapter2 ...)
